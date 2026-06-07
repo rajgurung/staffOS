@@ -154,51 +154,90 @@ A Workstream maps 1:1 to a Git branch. It is the primary organizing entity in St
 
 ```
 PROJECT
-|
-+-- WORKSTREAM (auto-created from git branch name)
-|   |   name: "rr-553-ai-hardening"
-|   |   title: "Harden retry logic" (human-editable)
-|   |   status: active | in_review | merged | archived
-|   |   project_id
-|   |
-|   +-- EVENTS (the raw atoms, routed here by branch)
-|   |   |   event_type: file_read, file_edited, command_run, etc.
-|   |   |   session_id (which session it came from)
-|   |   |   workstream_id (which workstream it belongs to)
-|   |   |   occurred_at
-|   |   |   payload
-|   |
-|   +-- PASSPORT (one living passport per workstream)
-|   |   |   intent, summary, risk_level, readiness_score
-|   |   |   files_touched, test_summary
-|   |   |   human_review_required
-|   |   |   last_assessed_at
-|   |   |
-|   |   +-- COUNCIL REVIEWS (6 AI persona reviews)
-|   |   +-- VERSIONS (immutable point-in-time snapshots)
-|   |       "v1: Session 1 done - 42% ready, High risk"
-|   |       "v2: Session 2 done - 68% ready, Medium risk"
-|   |       "v3: Council completed - 85% ready, Low risk"
-|   |
-|   +-- DOCUMENTS (ADRs, PR summaries)
-|   +-- DECISION LOGS
-|   +-- MEMORY ITEMS
-|
-+-- WORKSTREAM (another branch)
-|   ...
-|
-+-- PROJECT-LEVEL (promoted after merge)
-    +-- DOCUMENTS
-    +-- DECISION LOGS
-    +-- MEMORY ITEMS
+  |
+  +-- WORKSTREAM (auto-created from git branch name)
+  |   |   name: "rr-553-ai-hardening"
+  |   |   title: "Harden retry logic" (human-editable)
+  |   |   status: active | in_review | merged | archived
+  |   |   project_id
+  |   |
+  |   +-- EVENTS (the raw atoms, routed here by branch)
+  |   |   |   event_type: file_read, file_edited, command_run, etc.
+  |   |   |   session_id (which session it came from)
+  |   |   |   workstream_id (which workstream it belongs to)
+  |   |   |   occurred_at
+  |   |   |   payload
+  |   |
+  |   +-- PASSPORT (one living passport per workstream)
+  |   |   |   intent, summary, risk_level, readiness_score
+  |   |   |   files_touched, test_summary
+  |   |   |   human_review_required
+  |   |   |   last_assessed_at
+  |   |   |
+  |   |   +-- COUNCIL REVIEWS
+  |   |   +-- SNAPSHOTS (point-in-time captures)
+  |   |       "Session 1 done: 58% ready, Medium risk"
+  |   |       "Session 3 done: 85% ready, Low risk"
+  |   |
+  |   +-- DOCUMENTS (ADRs, PR summaries)
+  |   +-- DECISION LOGS
+  |   +-- MEMORY ITEMS
+  |
+  +-- WORKSTREAM (another branch)
+  |   ...
+  |
+  +-- PROJECT-LEVEL (promoted after merge)
+      +-- DOCUMENTS
+      +-- DECISION LOGS
+      +-- MEMORY ITEMS
 
 
 SESSION (just a time container, not in the hierarchy)
-|   external_session_id
-|   started_at, completed_at
-|   provider, agent_name
-|   References events it produced (but doesn't own them)
+  |   external_session_id
+  |   started_at, completed_at
+  |   provider, agent_name
+  |   References events it produced (but doesn't own them)
 ```
+
+### Passport Versioning
+
+The Passport is a living document that mutates as new work happens on the workstream. Each version is an immutable snapshot of the passport state at a point in time.
+
+```
+WORKSTREAM: rr-553-ai-hardening
+  |
+  +-- PASSPORT (single record, always reflects current state)
+      |   current_version: 3
+      |   readiness: 85%
+      |   risk: Low
+      |
+      +-- VERSIONS (immutable snapshots)
+          |
+          +-- v1 (Monday, after first session)
+          |   readiness: 42%, risk: High
+          |   "Initial work. No tests yet. Auth files touched."
+          |   trigger: session_completed
+          |   diff from previous: n/a
+          |
+          +-- v2 (Tuesday, after second session)
+          |   readiness: 68%, risk: Medium
+          |   "Tests added. Auth concern resolved. Retry logic needs review."
+          |   trigger: session_completed
+          |   diff from v1: +tests, risk downgraded, 2 checks resolved
+          |
+          +-- v3 (Wednesday, after council review)
+              readiness: 85%, risk: Low
+              "All council reviews passed. One minor doc suggestion remaining."
+              trigger: council_completed
+              diff from v2: +council review, risk downgraded, 1 check remaining
+```
+
+Each version captures:
+- The full passport state at that moment (readiness, risk, files, tests, checks)
+- What triggered the new version (session_completed, council_completed, manual_assessment, reassessment)
+- What changed since the previous version (delta description)
+
+This gives a clear timeline of how the work matured across sessions.
 
 ### Key design decisions
 
