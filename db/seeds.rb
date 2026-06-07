@@ -23,7 +23,6 @@ def seed_workstream(project:, branch_name:, title:, description:, status:, merge
                     intent:, summary:, risk_level:, readiness:, review_required:, review_mode: "passive",
                     test_summary:, files_touched:, missing_checks:, recommended_actions:, events_data:,
                     run_council: false)
-
   ws = Workstream.find_or_create_for_branch(project: project, branch_name: branch_name)
   ws.update!(title: title, description: description, status: status, merged_at: merged_at)
 

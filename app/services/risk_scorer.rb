@@ -62,9 +62,13 @@ class RiskScorer
       signals << { check: "tests_failing", risk: "high", reason: "#{test_summary['failed']} test(s) failing" }
     end
 
+    # "Behavioural change without tests" is a warning (SPEC §15). Documentation
+    # and test files don't themselves require accompanying tests, so a docs-only
+    # or test-only change stays Low.
     changed_files = files.select { |f| f["additions"].to_i > 0 || f["deletions"].to_i > 0 }
     test_files = changed_files.select { |f| f["path"].to_s.match?(/spec|test/i) }
-    if changed_files.any? && test_files.empty?
+    code_files = changed_files.reject { |f| f["path"].to_s.match?(/spec|test|\.md\z|\Adocs\/|readme/i) }
+    if code_files.any? && test_files.empty?
       signals << { check: "no_test_changes", risk: "medium", reason: "Code changed but no test files modified" }
     end
 

@@ -65,3 +65,6 @@
 
 # Memsearch
 .memsearch/
+
+# Ignore SimpleCov coverage reports.
+/coverage/
