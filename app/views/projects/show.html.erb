@@ -1,0 +1,59 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2"><%= @project.name %></h1>
+    <p class="text-text-muted text-sm"><%= @project.repo_name %></p>
+  </div>
+  <div class="flex gap-3">
+    <%= link_to "Hook Config", hook_config_project_path(@project), class: "h-[42px] px-4 border border-panel-border rounded-sm bg-white text-text-primary font-bold inline-flex items-center no-underline hover:bg-bg" %>
+    <%= link_to "Edit", edit_project_path(@project), class: "h-[42px] px-4 border border-panel-border rounded-sm bg-white text-text-primary font-bold inline-flex items-center no-underline hover:bg-bg" %>
+  </div>
+</div>
+
+<div class="grid grid-cols-3 gap-4 mb-6 max-xl:grid-cols-1">
+  <%= card(title: "Tech Stack") do %>
+    <div class="flex flex-wrap gap-2">
+      <% @project.tech_stack_list.each do |tech| %>
+        <span class="py-[7px] px-2.5 rounded-full bg-primary-soft text-primary-dark text-xs font-[850]"><%= tech %></span>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= card(title: "Stats") do %>
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between"><span class="text-text-muted">Total Runs</span><span class="font-bold"><%= @project.agent_sessions.count %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Passports</span><span class="font-bold"><%= @project.run_passports.count %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Documents</span><span class="font-bold"><%= @project.documents.count %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Decisions</span><span class="font-bold"><%= @project.decision_logs.count %></span></div>
+    </div>
+  <% end %>
+
+  <%= card(title: "API Tokens") do %>
+    <div class="space-y-2 mb-3">
+      <% @tokens.each do |token| %>
+        <div class="flex justify-between items-center text-sm">
+          <div>
+            <span class="text-text-soft font-semibold"><%= token.name %></span>
+            <code class="text-text-muted text-xs ml-2"><%= token.masked_token %></code>
+          </div>
+          <%= link_to "Revoke", project_api_token_path(@project, token), data: { turbo_method: :delete, turbo_confirm: "Revoke?" }, class: "text-danger text-xs font-bold no-underline" %>
+        </div>
+      <% end %>
+    </div>
+    <%= button_to "Generate Token", project_api_tokens_path(@project), params: { name: "CLI Token" }, class: "h-9 px-3 border border-panel-border rounded-sm bg-white text-text-soft text-sm font-bold cursor-pointer hover:bg-bg" %>
+  <% end %>
+</div>
+
+<%= card(title: "Risk Rules") do %>
+  <% if @project.risk_rules.present? %>
+    <div class="space-y-2">
+      <% @project.risk_rules.each do |pattern, level| %>
+        <div class="flex justify-between items-center text-sm p-2 rounded-sm bg-bg/50">
+          <code class="text-primary"><%= pattern %></code>
+          <span class="<%= risk_color(level) %> font-bold text-xs uppercase"><%= level %></span>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-text-muted text-sm">No custom risk rules. Default rules applied.</p>
+  <% end %>
+<% end %>

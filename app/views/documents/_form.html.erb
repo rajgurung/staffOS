@@ -1,0 +1,29 @@
+<%= form_with(model: document, class: "space-y-6") do |f| %>
+  <% if document.errors.any? %>
+    <div class="p-4 rounded-sm bg-danger-soft border border-danger/20 text-danger text-sm">
+      <% document.errors.full_messages.each do |msg| %><p><%= msg %></p><% end %>
+    </div>
+  <% end %>
+  <div>
+    <label class="block text-text-soft text-sm font-bold mb-2">Type</label>
+    <%= f.select :document_type, Document::TYPES.map { |t| [t.titleize, t] },
+      {}, class: "w-full h-11 px-3 border border-panel-border rounded-sm bg-white text-text-primary outline-none focus:border-primary/40" %>
+  </div>
+  <div>
+    <label class="block text-text-soft text-sm font-bold mb-2">Title</label>
+    <%= f.text_field :title, class: "w-full h-11 px-3 border border-panel-border rounded-sm bg-white text-text-primary placeholder:text-text-muted outline-none focus:border-primary/40", placeholder: "Document title..." %>
+  </div>
+  <div>
+    <label class="block text-text-soft text-sm font-bold mb-2">Content (Markdown)</label>
+    <%= f.text_area :content_markdown, rows: 15, class: "w-full p-4 border border-panel-border rounded-sm bg-white text-text-soft font-mono text-sm placeholder:text-text-muted outline-none focus:border-primary/40 resize-y", placeholder: "Write your document content..." %>
+  </div>
+  <div>
+    <label class="block text-text-soft text-sm font-bold mb-2">Status</label>
+    <%= f.select :status, %w[draft published archived].map { |s| [s.capitalize, s] },
+      {}, class: "w-full h-11 px-3 border border-panel-border rounded-sm bg-white text-text-primary outline-none focus:border-primary/40" %>
+  </div>
+  <div class="flex gap-3">
+    <%= f.submit class: "h-[42px] px-6 rounded-sm btn-primary font-bold cursor-pointer border-0" %>
+    <%= link_to "Cancel", documents_path, class: "h-[42px] px-4 border border-panel-border rounded-sm bg-white text-text-primary font-bold inline-flex items-center no-underline hover:bg-bg" %>
+  </div>
+<% end %>

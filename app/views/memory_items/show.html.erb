@@ -1,0 +1,23 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <div class="flex items-center gap-3 mb-2">
+      <span class="inline-flex items-center h-7 px-3 rounded-full text-xs font-bold bg-<%= @memory_item.type_color %>-soft text-<%= @memory_item.type_color %>"><%= @memory_item.memory_type.capitalize %></span>
+      <% if @memory_item.confidence %>
+        <span class="text-text-muted text-sm"><%= (@memory_item.confidence * 100).round %>% confidence</span>
+      <% end %>
+    </div>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Memory Item</h1>
+    <p class="text-text-muted text-sm">
+      <%= @memory_item.project.name %>
+      <% if @memory_item.expires_at %> &middot; Expires <%= @memory_item.expires_at.strftime("%Y-%m-%d") %><% end %>
+    </p>
+  </div>
+  <div class="flex gap-3">
+    <%= link_to "Edit", edit_memory_item_path(@memory_item), class: "h-[42px] px-4 border border-panel-border rounded-sm bg-white text-text-primary font-bold inline-flex items-center no-underline hover:bg-bg" %>
+    <%= link_to "Delete", memory_item_path(@memory_item), data: { turbo_method: :delete, turbo_confirm: "Delete?" }, class: "h-[42px] px-4 border border-danger/20 rounded-sm bg-danger-soft text-danger font-bold inline-flex items-center no-underline" %>
+  </div>
+</div>
+
+<%= card do %>
+  <p class="text-text-soft text-sm leading-[1.8]"><%= simple_format(@memory_item.content) %></p>
+<% end %>

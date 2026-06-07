@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "StaffOS" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="StaffOS">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="font-sans text-text-primary antialiased">
+    <div class="grid grid-cols-[260px_1fr] min-h-screen max-lg:grid-cols-1">
+      <%= render "shared/sidebar" %>
+
+      <main class="min-w-0">
+        <%= render "shared/topbar" %>
+        <section class="p-7">
+          <% if notice %>
+            <div class="mb-4 p-3 rounded-sm bg-success-soft border border-success/20 text-success text-sm font-semibold" data-controller="flash">
+              <%= notice %>
+              <button class="float-right text-xs opacity-70 hover:opacity-100" data-action="flash#dismiss">dismiss</button>
+            </div>
+          <% end %>
+          <% if alert %>
+            <div class="mb-4 p-3 rounded-sm bg-danger-soft border border-danger/20 text-danger text-sm font-semibold" data-controller="flash">
+              <%= alert %>
+              <button class="float-right text-xs opacity-70 hover:opacity-100" data-action="flash#dismiss">dismiss</button>
+            </div>
+          <% end %>
+          <%= yield %>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Projects</h1>
+    <p class="text-text-muted text-sm">Manage your connected codebases and their risk rules.</p>
+  </div>
+  <%= link_to "New Project", new_project_path, class: "h-[42px] px-4 rounded-sm btn-primary font-bold cursor-pointer border-0 inline-flex items-center no-underline" %>
+</div>
+
+<div class="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
+  <% @projects.each do |project| %>
+    <%= link_to project_path(project), class: "card block no-underline" do %>
+      <div class="relative p-5">
+        <h3 class="text-text-primary font-bold text-lg mb-1"><%= project.name %></h3>
+        <p class="text-text-muted text-xs mb-3"><%= project.repo_name %></p>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <% project.tech_stack_list.each do |tech| %>
+            <span class="py-1 px-2 rounded-full bg-bg text-text-soft text-xs font-bold border border-panel-border"><%= tech %></span>
+          <% end %>
+        </div>
+        <div class="flex gap-4 text-xs text-text-muted">
+          <span><%= project.agent_sessions.count %> runs</span>
+          <span><%= project.run_passports.count %> passports</span>
+          <span><%= project.documents.count %> docs</span>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+</div>

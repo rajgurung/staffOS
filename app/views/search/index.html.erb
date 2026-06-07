@@ -1,0 +1,108 @@
+<div class="mb-6">
+  <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-3">Search</h1>
+  <%= form_tag search_path, method: :get, class: "flex gap-2" do %>
+    <input name="q" value="<%= @query %>" autofocus
+      class="flex-1 h-9 px-3 border border-panel-border rounded-md bg-white text-[13px] text-text-primary placeholder:text-text-muted outline-none focus:border-primary/40 focus:shadow-[0_0_0_3px_rgba(91,95,247,0.08)]"
+      placeholder="Search passports, docs, decisions, memory..." />
+    <button type="submit" class="h-9 px-4 rounded-md btn-primary text-[12px] font-semibold border-0 cursor-pointer">Search</button>
+  <% end %>
+</div>
+
+<% if @query.present? %>
+  <p class="text-text-muted text-[13px] mb-4"><%= @total %> result<%= @total == 1 ? '' : 's' %> for "<%= @query %>"</p>
+
+  <%# Passports %>
+  <% if @passports&.any? %>
+    <div class="mb-5">
+      <p class="text-[12px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-2">Run Passports</p>
+      <div class="space-y-2">
+        <% @passports.each do |passport| %>
+          <%= link_to run_passport_path(passport), class: "card block no-underline" do %>
+            <div class="p-4 flex items-center justify-between">
+              <div class="min-w-0 flex-1">
+                <p class="text-[13px] font-semibold text-text-primary m-0 truncate"><%= passport.intent %></p>
+                <p class="text-[11px] text-text-muted mt-0.5 m-0"><%= passport.agent_session.branch_name %> &middot; <%= passport.risk_level %></p>
+              </div>
+              <span class="text-[14px] font-[800] ml-3"><%= passport.readiness_score %>%</span>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Documents %>
+  <% if @documents&.any? %>
+    <div class="mb-5">
+      <p class="text-[12px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-2">Documents</p>
+      <div class="space-y-2">
+        <% @documents.each do |doc| %>
+          <%= link_to document_path(doc), class: "card block no-underline" do %>
+            <div class="p-4 flex items-center gap-2.5">
+              <span class="inline-flex items-center h-5 px-1.5 rounded text-[9px] font-semibold bg-<%= doc.type_color %>-soft text-<%= doc.type_color %>"><%= doc.document_type.upcase.first(3) %></span>
+              <p class="text-[13px] font-semibold text-text-primary m-0"><%= doc.title %></p>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Decisions %>
+  <% if @decisions&.any? %>
+    <div class="mb-5">
+      <p class="text-[12px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-2">Decisions</p>
+      <div class="space-y-2">
+        <% @decisions.each do |log| %>
+          <%= link_to decision_log_path(log), class: "card block no-underline" do %>
+            <div class="p-4">
+              <p class="text-[13px] font-semibold text-text-primary m-0"><%= log.title %></p>
+              <p class="text-[11px] text-text-muted mt-0.5 m-0"><%= truncate(log.decision, length: 80) %></p>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Memory %>
+  <% if @memory_items&.any? %>
+    <div class="mb-5">
+      <p class="text-[12px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-2">Memory</p>
+      <div class="space-y-2">
+        <% @memory_items.each do |item| %>
+          <%= link_to memory_item_path(item), class: "card block no-underline" do %>
+            <div class="p-4">
+              <span class="inline-flex items-center h-5 px-1.5 rounded text-[9px] font-semibold bg-<%= item.type_color %>-soft text-<%= item.type_color %> mb-1"><%= item.memory_type %></span>
+              <p class="text-[13px] text-text-soft m-0"><%= truncate(item.content, length: 100) %></p>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Sessions %>
+  <% if @sessions&.any? %>
+    <div class="mb-5">
+      <p class="text-[12px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-2">Runs</p>
+      <div class="space-y-2">
+        <% @sessions.each do |session| %>
+          <%= link_to run_path(session), class: "card block no-underline" do %>
+            <div class="p-4">
+              <p class="text-[13px] font-semibold text-text-primary m-0"><%= session.agent_name %></p>
+              <p class="text-[11px] text-text-muted mt-0.5 m-0"><span class="text-primary"><%= session.branch_name %></span> &middot; <%= session.project.name %></p>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @total == 0 %>
+    <div class="text-center py-10 text-text-muted">
+      <p class="font-semibold mb-1">No results found</p>
+      <p class="text-[13px]">Try a different search term.</p>
+    </div>
+  <% end %>
+<% end %>

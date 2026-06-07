@@ -1,0 +1,79 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Risk Cockpit</h1>
+    <p class="text-text-muted text-sm">Engineering risk overview across all AI coding sessions.</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-5 gap-4 mb-6 max-xl:grid-cols-2 max-lg:grid-cols-1">
+  <%= card(title: "Total Runs") do %><p class="text-[32px] font-[850] tracking-[-0.05em]"><%= @total_runs %></p><% end %>
+  <%= card(title: "High Risk") do %>
+    <p class="text-[32px] font-[850] tracking-[-0.05em] text-danger"><%= @high_risk %></p>
+    <p class="text-text-muted text-[13px]"><%= @total_runs > 0 ? ((@high_risk.to_f / @total_runs) * 100).round : 0 %>% of runs</p>
+  <% end %>
+  <%= card(title: "Medium Risk") do %>
+    <p class="text-[32px] font-[850] tracking-[-0.05em] text-warning"><%= @medium_risk %></p>
+    <p class="text-text-muted text-[13px]"><%= @total_runs > 0 ? ((@medium_risk.to_f / @total_runs) * 100).round : 0 %>% of runs</p>
+  <% end %>
+  <%= card(title: "Low Risk") do %>
+    <p class="text-[32px] font-[850] tracking-[-0.05em] text-success"><%= @low_risk %></p>
+    <p class="text-text-muted text-[13px]"><%= @total_runs > 0 ? ((@low_risk.to_f / @total_runs) * 100).round : 0 %>% of runs</p>
+  <% end %>
+  <%= card(title: "Avg Readiness") do %>
+    <p class="text-[32px] font-[850] tracking-[-0.05em] text-primary"><%= @avg_readiness %>%</p>
+    <p class="text-text-muted text-[13px]"><%= @review_required %> need human review</p>
+  <% end %>
+</div>
+
+<div class="grid grid-cols-2 gap-4 mb-4 max-xl:grid-cols-1">
+  <%= card(title: "Risk Distribution") do %>
+    <div class="flex h-10 rounded-sm overflow-hidden mb-4">
+      <% if @total_runs > 0 %>
+        <div class="bg-danger flex items-center justify-center text-xs font-bold text-white" style="width: <%= (@high_risk.to_f / @total_runs * 100).round %>%"><% if @high_risk > 0 %><%= @high_risk %><% end %></div>
+        <div class="bg-warning flex items-center justify-center text-xs font-bold" style="width: <%= (@medium_risk.to_f / @total_runs * 100).round %>%"><% if @medium_risk > 0 %><%= @medium_risk %><% end %></div>
+        <div class="bg-success flex items-center justify-center text-xs font-bold text-white" style="width: <%= (@low_risk.to_f / @total_runs * 100).round %>%"><% if @low_risk > 0 %><%= @low_risk %><% end %></div>
+      <% else %>
+        <div class="bg-panel-border w-full flex items-center justify-center text-text-muted text-xs">No data</div>
+      <% end %>
+    </div>
+    <div class="flex gap-6 text-xs">
+      <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-danger"></span><span class="text-text-soft">High</span></div>
+      <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-warning"></span><span class="text-text-soft">Medium</span></div>
+      <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-success"></span><span class="text-text-soft">Low</span></div>
+    </div>
+  <% end %>
+
+  <%= card(title: "Most Changed Files") do %>
+    <div class="space-y-3">
+      <% @high_risk_files.each do |path, data| %>
+        <div class="flex justify-between items-center text-sm">
+          <code class="text-primary text-xs truncate max-w-[70%]"><%= path %></code>
+          <div class="flex items-center gap-3">
+            <span class="text-text-muted text-xs"><%= data[:count] %> runs</span>
+            <span class="text-text-soft font-bold"><%= data[:total_changes] %> changes</span>
+          </div>
+        </div>
+      <% end %>
+      <% if @high_risk_files.empty? %><p class="text-text-muted text-sm">No file data yet.</p><% end %>
+    </div>
+  <% end %>
+</div>
+
+<%= card(title: "Recent Risk Assessments") do %>
+  <div class="space-y-3">
+    <% @recent_passports.each do |passport| %>
+      <%= link_to run_passport_path(passport), class: "block p-3 rounded-sm border border-panel-border bg-bg/50 hover:bg-bg transition-colors no-underline" do %>
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="text-text-primary font-bold text-sm"><%= truncate(passport.intent, length: 60) %></p>
+            <p class="text-text-muted text-xs mt-1"><%= passport.agent_session.branch_name %> &middot; <%= passport.files_count %> files &middot; <%= time_ago_in_words(passport.created_at) %> ago</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
+            <span class="font-[850] text-lg"><%= passport.readiness_score %>%</span>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

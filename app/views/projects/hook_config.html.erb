@@ -1,0 +1,41 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Claude Code Hook Config</h1>
+    <p class="text-text-muted text-sm">Add this configuration to your Claude Code settings to connect StaffOS.</p>
+  </div>
+  <%= link_to "Back to Project", project_path(@project), class: "h-[42px] px-4 border border-panel-border rounded-sm bg-white text-text-primary font-bold inline-flex items-center no-underline hover:bg-bg" %>
+</div>
+
+<%= card(title: "1. Generate an API Token") do %>
+  <% if @token %>
+    <p class="text-text-soft text-sm mb-2">You have a token: <code class="text-primary"><%= @token.masked_token %></code></p>
+  <% else %>
+    <p class="text-text-soft text-sm mb-3">Generate an API token first from the project page.</p>
+    <%= button_to "Generate Token", project_api_tokens_path(@project), params: { name: "CLI Token" }, class: "h-9 px-3 rounded-sm btn-primary text-sm font-bold cursor-pointer border-0" %>
+  <% end %>
+<% end %>
+
+<%= card(title: "2. Add to .claude/settings.json", classes: "mt-4") do %>
+  <p class="text-text-soft text-sm mb-3">Add this hooks configuration to your Claude Code settings file:</p>
+  <div class="border border-panel-border rounded-[14px] bg-bg p-4 font-mono text-xs text-text-soft overflow-x-auto" data-controller="clipboard" data-clipboard-text-value='<%= hook_config_json(@project).html_safe %>'>
+    <pre><%= hook_config_json(@project) %></pre>
+  </div>
+<% end %>
+
+<%= card(title: "3. Lifecycle Events Captured", classes: "mt-4") do %>
+  <div class="grid grid-cols-2 gap-3 max-lg:grid-cols-1">
+    <% [
+      ["SessionStart", "Captures session metadata, branch, model info"],
+      ["UserPromptSubmit", "Records the developer's intent and prompt"],
+      ["Tool Use (before)", "Logs which tools the agent plans to use"],
+      ["Tool Use (after)", "Records results of file reads, edits, commands"],
+      ["Stop", "Captures session pause or interruption"],
+      ["SessionEnd", "Triggers passport generation and final summary"]
+    ].each do |event, description| %>
+      <div class="p-3 rounded-sm bg-bg/50 border border-panel-border">
+        <p class="text-primary font-bold text-sm"><%= event %></p>
+        <p class="text-text-muted text-xs mt-1"><%= description %></p>
+      </div>
+    <% end %>
+  </div>
+<% end %>

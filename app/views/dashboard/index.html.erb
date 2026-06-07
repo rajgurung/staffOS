@@ -1,0 +1,173 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">Dashboard</h1>
+    <p class="text-text-muted text-[13px]">AI engineering assurance overview.</p>
+  </div>
+  <div class="flex gap-2">
+    <%= link_to "New Project", new_project_path, class: "h-8 px-3 rounded-md btn-secondary text-[12px] font-semibold inline-flex items-center no-underline" %>
+  </div>
+</div>
+
+<%# Stats Row %>
+<div class="grid grid-cols-5 gap-3 mb-5 max-xl:grid-cols-3 max-lg:grid-cols-2">
+  <%= card(title: "Total Runs") do %>
+    <p class="text-[28px] font-[850] tracking-[-0.05em] m-0"><%= @total_runs %></p>
+    <p class="text-text-muted text-[12px] mt-1 m-0">sessions captured</p>
+  <% end %>
+
+  <%= card(title: "Passports") do %>
+    <p class="text-[28px] font-[850] tracking-[-0.05em] text-primary m-0"><%= @total_passports %></p>
+    <p class="text-text-muted text-[12px] mt-1 m-0">generated</p>
+  <% end %>
+
+  <%= card(title: "Avg Readiness") do %>
+    <p class="text-[28px] font-[850] tracking-[-0.05em] m-0"><%= @avg_readiness %>%</p>
+    <p class="text-text-muted text-[12px] mt-1 m-0">across passports</p>
+  <% end %>
+
+  <%= card(title: "Review Required") do %>
+    <p class="text-[28px] font-[850] tracking-[-0.05em] text-warning m-0"><%= @review_required %></p>
+    <p class="text-text-muted text-[12px] mt-1 m-0">pending human review</p>
+  <% end %>
+
+  <%= card(title: "Risk Distribution") do %>
+    <div class="flex items-center gap-3 mt-1">
+      <div class="flex h-[6px] flex-1 rounded-full overflow-hidden bg-bg-wash">
+        <% total = [@high_risk + @medium_risk + @low_risk, 1].max %>
+        <div class="bg-danger" style="width: <%= (@high_risk.to_f / total * 100).round %>%"></div>
+        <div class="bg-warning" style="width: <%= (@medium_risk.to_f / total * 100).round %>%"></div>
+        <div class="bg-success" style="width: <%= (@low_risk.to_f / total * 100).round %>%"></div>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-2 text-[10px] text-text-muted font-medium">
+      <span><span class="inline-block w-1.5 h-1.5 rounded-full bg-danger mr-1"></span><%= @high_risk %> High</span>
+      <span><span class="inline-block w-1.5 h-1.5 rounded-full bg-warning mr-1"></span><%= @medium_risk %> Med</span>
+      <span><span class="inline-block w-1.5 h-1.5 rounded-full bg-success mr-1"></span><%= @low_risk %> Low</span>
+    </div>
+  <% end %>
+</div>
+
+<%# Active Runs + Activity Feed %>
+<div class="grid grid-cols-[1fr_1fr] gap-4 mb-4 max-xl:grid-cols-1">
+  <%# Active Runs %>
+  <%= card(title: "Active Runs") do %>
+    <% if @active_runs.any? %>
+      <div class="space-y-2.5">
+        <% @active_runs.each do |session| %>
+          <%= link_to run_path(session), class: "flex items-center justify-between p-2.5 rounded-md border border-panel-border hover:bg-bg transition-colors no-underline" do %>
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+              <div>
+                <p class="text-[13px] font-semibold text-text-primary m-0"><%= session.agent_name %></p>
+                <p class="text-[11px] text-text-muted m-0"><%= session.branch_name %> &middot; <%= session.project.name %></p>
+              </div>
+            </div>
+            <span class="text-text-muted text-[11px]"><%= time_ago_in_words(session.started_at) %></span>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="py-6 text-center">
+        <p class="text-text-muted text-[13px] m-0">No active runs.</p>
+        <p class="text-text-muted text-[11px] mt-1 m-0">Sessions appear here when Claude Code is connected.</p>
+      </div>
+    <% end %>
+  <% end %>
+
+  <%# Recent Activity Feed %>
+  <%= card(title: "Activity Feed") do %>
+    <div class="space-y-0">
+      <% @recent_events.each do |event| %>
+        <div class="flex items-start gap-2.5 py-2 border-b border-panel-border last:border-0">
+          <span class="w-[6px] h-[6px] mt-[6px] rounded-full shrink-0
+            <%= case event.event_type
+              when /completed/ then 'bg-success'
+              when /failed|error/ then 'bg-danger'
+              when /edited/ then 'bg-primary'
+              else 'bg-text-muted'
+            end %>"></span>
+          <div class="flex-1 min-w-0">
+            <p class="text-[12px] text-text-primary m-0">
+              <span class="font-semibold"><%= event.event_type.titleize %></span>
+              <% if event.payload["file"] %>
+                <code class="text-primary text-[11px] ml-1"><%= File.basename(event.payload["file"]) %></code>
+              <% end %>
+            </p>
+            <p class="text-[10px] text-text-muted mt-0.5 m-0"><%= event.occurred_at.strftime("%H:%M") %> &middot; <%= event.agent_session.project.name %></p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<%# Recent Passports %>
+<%= card(title: "Recent Run Passports") do %>
+  <% if @recent_passports.any? %>
+    <div class="space-y-2">
+      <% @recent_passports.each do |passport| %>
+        <%= link_to run_passport_path(passport), class: "flex items-center justify-between p-3 rounded-md border border-panel-border hover:bg-bg transition-colors no-underline" do %>
+          <div class="min-w-0 flex-1">
+            <p class="text-[13px] font-semibold text-text-primary m-0 truncate"><%= truncate(passport.intent, length: 70) %></p>
+            <p class="text-[11px] text-text-muted mt-0.5 m-0">
+              <%= passport.agent_session.agent_name %> &middot;
+              <span class="text-primary"><%= passport.agent_session.branch_name %></span> &middot;
+              <%= passport.files_count %> files &middot;
+              <%= time_ago_in_words(passport.created_at) %> ago
+            </p>
+          </div>
+          <div class="flex items-center gap-3 ml-3 shrink-0">
+            <% if passport.human_review_required? %>
+              <span class="text-warning text-[10px] font-semibold">REVIEW</span>
+            <% end %>
+            <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
+            <span class="text-[16px] font-[800] tracking-[-0.04em] w-10 text-right"><%= passport.readiness_score %>%</span>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-text-muted text-[13px] py-4 text-center m-0">No passports yet. Connect Claude Code to start.</p>
+  <% end %>
+<% end %>
+
+<%# Recent Docs + Decisions %>
+<div class="grid grid-cols-2 gap-4 mt-4 max-xl:grid-cols-1">
+  <%= card(title: "Recent Documents") do %>
+    <% if @recent_documents.any? %>
+      <div class="space-y-2">
+        <% @recent_documents.each do |doc| %>
+          <%= link_to document_path(doc), class: "flex items-center gap-2.5 p-2 rounded-md hover:bg-bg transition-colors no-underline" do %>
+            <span class="inline-flex items-center h-5 px-1.5 rounded text-[9px] font-semibold bg-<%= doc.type_color %>-soft text-<%= doc.type_color %>"><%= doc.document_type.upcase.first(3) %></span>
+            <div class="min-w-0 flex-1">
+              <p class="text-[12px] font-semibold text-text-primary m-0 truncate"><%= doc.title %></p>
+              <p class="text-[10px] text-text-muted m-0"><%= time_ago_in_words(doc.created_at) %> ago</p>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-text-muted text-[12px] text-center py-3 m-0">No documents yet.</p>
+    <% end %>
+    <%= link_to "View all &rarr;".html_safe, documents_path, class: "block mt-3 text-primary text-[12px] font-semibold no-underline" %>
+  <% end %>
+
+  <%= card(title: "Recent Decisions") do %>
+    <% if @recent_decisions.any? %>
+      <div class="space-y-2">
+        <% @recent_decisions.each do |log| %>
+          <%= link_to decision_log_path(log), class: "flex items-center gap-2.5 p-2 rounded-md hover:bg-bg transition-colors no-underline" do %>
+            <%= status_pill(log.status&.capitalize || "Draft", color: log.status_color.to_sym) %>
+            <div class="min-w-0 flex-1">
+              <p class="text-[12px] font-semibold text-text-primary m-0 truncate"><%= log.title %></p>
+              <p class="text-[10px] text-text-muted m-0"><%= time_ago_in_words(log.created_at) %> ago</p>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-text-muted text-[12px] text-center py-3 m-0">No decisions yet.</p>
+    <% end %>
+    <%= link_to "View all &rarr;".html_safe, decision_logs_path, class: "block mt-3 text-primary text-[12px] font-semibold no-underline" %>
+  <% end %>
+</div>

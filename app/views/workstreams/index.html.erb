@@ -1,0 +1,54 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">Workstreams</h1>
+    <p class="text-text-muted text-[13px]">All active and historical branches with their engineering context.</p>
+  </div>
+</div>
+
+<div class="flex gap-2 mb-5">
+  <% [["All", nil], ["Active", "active"], ["In Review", "in_review"], ["Merged", "merged"], ["Archived", "archived"]].each do |label, status| %>
+    <% active = params[:status] == status || (status.nil? && params[:status].blank?) %>
+    <%= link_to label, workstreams_path(status: status),
+      class: "h-8 px-3 flex items-center rounded-md text-[12px] font-semibold transition-colors no-underline #{active ? 'bg-primary text-white shadow-primary' : 'btn-secondary'}" %>
+  <% end %>
+</div>
+
+<div class="space-y-3">
+  <% @workstreams.each do |ws| %>
+    <%= link_to workstream_path(ws), class: "card card-hover block no-underline" do %>
+      <div class="relative p-5">
+        <div class="flex justify-between items-start">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2.5 mb-1">
+              <span class="w-2 h-2 rounded-full bg-<%= ws.status_color %> <%= ws.status == 'active' ? 'animate-pulse' : '' %>"></span>
+              <h3 class="text-[15px] font-[700] text-text-primary m-0 truncate"><%= ws.display_name %></h3>
+              <%= status_pill(ws.status.titleize, color: ws.status_color.to_sym) %>
+            </div>
+            <p class="text-text-muted text-[12px] mt-1 m-0">
+              <code class="text-primary text-[11px]"><%= ws.branch_name %></code>
+              &middot; <%= ws.project.name %>
+              &middot; <%= ws.total_sessions %> session<%= ws.total_sessions == 1 ? '' : 's' %>
+              &middot; <%= time_ago_in_words(ws.updated_at) %> ago
+            </p>
+          </div>
+          <% if ws.current_passport %>
+            <div class="flex items-center gap-3 ml-3 shrink-0">
+              <%= status_pill(ws.current_passport.risk_level, color: ws.current_passport.risk_color.to_sym) %>
+              <span class="text-[18px] font-[800] tracking-[-0.04em]"><%= ws.current_passport.readiness_score %>%</span>
+            </div>
+          <% end %>
+        </div>
+        <% if ws.description.present? %>
+          <p class="text-text-soft text-[12px] mt-2 m-0"><%= truncate(ws.description, length: 120) %></p>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <% if @workstreams.empty? %>
+    <div class="text-center py-12 text-text-muted">
+      <p class="font-semibold mb-1">No workstreams yet</p>
+      <p class="text-[13px]">Workstreams are auto-created when Claude Code sessions are captured.</p>
+    </div>
+  <% end %>
+</div>

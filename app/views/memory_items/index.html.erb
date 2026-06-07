@@ -1,0 +1,42 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Project Memory</h1>
+    <p class="text-text-muted text-sm">Reusable context and knowledge captured from AI sessions.</p>
+  </div>
+  <%= link_to "Add Memory", new_memory_item_path, class: "h-[42px] px-4 rounded-sm btn-primary font-bold cursor-pointer border-0 inline-flex items-center no-underline" %>
+</div>
+
+<div class="flex gap-3 mb-6">
+  <% [["All", nil]].concat(MemoryItem::TYPES.map { |t| [t.capitalize, t] }).each do |label, type| %>
+    <% active = params[:type] == type || (type.nil? && params[:type].blank?) %>
+    <%= link_to label, memory_items_path(type: type),
+      class: "h-9 px-4 flex items-center rounded-sm text-sm font-bold transition-colors no-underline #{active ? 'btn-primary border-0' : 'border border-panel-border bg-white text-text-soft hover:bg-bg'}" %>
+  <% end %>
+</div>
+
+<div class="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
+  <% @memory_items.each do |item| %>
+    <%= link_to memory_item_path(item), class: "card block no-underline" do %>
+      <div class="relative p-5">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="inline-flex items-center h-6 px-2 rounded-full text-xs font-bold bg-<%= item.type_color %>-soft text-<%= item.type_color %>"><%= item.memory_type.capitalize %></span>
+          <% if item.confidence %>
+            <span class="text-text-muted text-xs"><%= (item.confidence * 100).round %>% confidence</span>
+          <% end %>
+        </div>
+        <p class="text-text-soft text-sm leading-[1.6]"><%= truncate(item.content, length: 200) %></p>
+        <p class="text-text-muted text-xs mt-2">
+          <%= item.project.name %>
+          <% if item.expires_at %> &middot; Expires <%= time_ago_in_words(item.expires_at) %><% end %>
+        </p>
+      </div>
+    <% end %>
+  <% end %>
+</div>
+
+<% if @memory_items.empty? %>
+  <div class="text-center py-12 text-text-muted">
+    <p class="text-lg font-bold mb-2">No memory items yet</p>
+    <p class="text-sm">Memory items capture reusable context from AI sessions and documents.</p>
+  </div>
+<% end %>

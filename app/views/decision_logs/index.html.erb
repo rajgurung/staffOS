@@ -1,0 +1,40 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Decisions</h1>
+    <p class="text-text-muted text-sm">Engineering decisions extracted from AI coding sessions.</p>
+  </div>
+  <%= link_to "New Decision", new_decision_log_path, class: "h-[42px] px-4 rounded-sm btn-primary font-bold cursor-pointer border-0 inline-flex items-center no-underline" %>
+</div>
+
+<div class="flex gap-3 mb-6">
+  <% [["All", nil], ["Active", "active"], ["Draft", "draft"], ["Superseded", "superseded"]].each do |label, status| %>
+    <% active = params[:status] == status || (status.nil? && params[:status].blank?) %>
+    <%= link_to label, decision_logs_path(status: status),
+      class: "h-9 px-4 flex items-center rounded-sm text-sm font-bold transition-colors no-underline #{active ? 'btn-primary border-0' : 'border border-panel-border bg-white text-text-soft hover:bg-bg'}" %>
+  <% end %>
+</div>
+
+<div class="space-y-3">
+  <% @decision_logs.each do |log| %>
+    <%= link_to decision_log_path(log), class: "card block no-underline" do %>
+      <div class="relative p-5">
+        <div class="flex justify-between items-center">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-1">
+              <%= status_pill(log.status&.capitalize || "Draft", color: log.status_color.to_sym) %>
+              <span class="text-text-primary font-bold"><%= log.title %></span>
+            </div>
+            <p class="text-text-muted text-xs mt-1"><%= truncate(log.decision, length: 120) %></p>
+          </div>
+          <span class="text-text-muted text-xs"><%= time_ago_in_words(log.created_at) %> ago</span>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+  <% if @decision_logs.empty? %>
+    <div class="text-center py-12 text-text-muted">
+      <p class="text-lg font-bold mb-2">No decisions logged yet</p>
+      <p class="text-sm">Decisions are extracted from Run Passports or created manually.</p>
+    </div>
+  <% end %>
+</div>

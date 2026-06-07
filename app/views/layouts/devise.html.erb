@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "StaffOS" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="application-name" content="StaffOS">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="font-sans text-text-primary antialiased bg-bg">
+    <div class="min-h-screen flex items-center justify-center p-6">
+      <div class="w-full max-w-[380px]">
+        <div class="flex items-center justify-center gap-2.5 mb-8">
+          <span class="w-8 h-8 rounded-lg bg-primary grid place-items-center text-white text-sm font-bold shadow-primary">S</span>
+          <span class="text-xl font-[750] tracking-[-0.04em]">StaffOS</span>
+        </div>
+
+        <% if notice %>
+          <div class="mb-4 p-3 rounded-md bg-success-soft border border-success/10 text-success text-[13px] font-medium"><%= notice %></div>
+        <% end %>
+        <% if alert %>
+          <div class="mb-4 p-3 rounded-md bg-danger-soft border border-danger/10 text-danger text-[13px] font-medium"><%= alert %></div>
+        <% end %>
+
+        <div class="card">
+          <div class="p-6">
+            <%= yield %>
+          </div>
+        </div>
+
+        <p class="text-center text-text-muted text-[11px] mt-5">Trust, review, and remember AI-assisted engineering work.</p>
+      </div>
+    </div>
+  </body>
+</html>

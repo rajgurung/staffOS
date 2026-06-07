@@ -1,0 +1,42 @@
+<aside class="sticky top-0 h-screen py-5 px-3 border-r border-panel-border bg-white max-lg:hidden flex flex-col">
+  <div class="flex items-center gap-2.5 px-3 mb-8">
+    <%= link_to root_path, class: "flex items-center gap-2.5 no-underline" do %>
+      <span class="w-7 h-7 rounded-lg bg-primary grid place-items-center text-white text-xs font-bold shadow-primary">S</span>
+      <span class="text-[17px] font-[750] tracking-[-0.04em] text-text-primary">StaffOS</span>
+    <% end %>
+  </div>
+
+  <nav class="flex-1 space-y-6">
+    <div>
+      <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">Work</p>
+      <%= sidebar_link "Workstreams", workstreams_path, "workstreams" %>
+      <%= sidebar_link "Run Passports", run_passports_path, "passports" %>
+      <%= sidebar_link "Risk Cockpit", risk_cockpit_path, "risk" %>
+    </div>
+
+    <div>
+      <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">Knowledge</p>
+      <%= sidebar_link "Decisions", decision_logs_path, "decisions" %>
+      <%= sidebar_link "Documentation", documents_path, "docs" %>
+      <%= sidebar_link "Project Memory", memory_items_path, "memory" %>
+    </div>
+
+    <div>
+      <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">System</p>
+      <%= sidebar_link "Sessions", runs_path, "runs" %>
+      <%= sidebar_link "Projects", projects_path, "projects" %>
+    </div>
+  </nav>
+
+  <div class="px-3 pt-4 border-t border-panel-border">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-full bg-primary-soft text-primary grid place-items-center text-xs font-bold">
+        <%= current_user.name&.first&.upcase || current_user.email.first.upcase %>
+      </div>
+      <div class="min-w-0 flex-1">
+        <p class="text-[13px] font-semibold text-text-primary truncate m-0"><%= current_user.name || current_user.email.split("@").first %></p>
+        <p class="text-[11px] text-text-muted truncate m-0"><%= current_user.email %></p>
+      </div>
+    </div>
+  </div>
+</aside>

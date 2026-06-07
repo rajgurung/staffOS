@@ -1,0 +1,43 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Documentation</h1>
+    <p class="text-text-muted text-sm">ADRs, decision logs, PR summaries, and risk items generated from AI sessions.</p>
+  </div>
+  <%= link_to "New Document", new_document_path, class: "h-[42px] px-4 rounded-sm btn-primary font-bold cursor-pointer border-0 inline-flex items-center no-underline" %>
+</div>
+
+<div class="flex gap-3 mb-6">
+  <% [["All", nil], ["ADRs", "adr"], ["Decision Logs", "decision_log"], ["PR Summaries", "pr_summary"], ["Risk Items", "risk_item"]].each do |label, type| %>
+    <% active = params[:type] == type || (type.nil? && params[:type].blank?) %>
+    <%= link_to label, documents_path(type: type),
+      class: "h-9 px-4 flex items-center rounded-sm text-sm font-bold transition-colors no-underline #{active ? 'btn-primary border-0' : 'border border-panel-border bg-white text-text-soft hover:bg-bg'}" %>
+  <% end %>
+</div>
+
+<div class="space-y-3">
+  <% @documents.each do |doc| %>
+    <%= link_to document_path(doc), class: "card block no-underline" do %>
+      <div class="relative p-5">
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="flex items-center gap-3 mb-1">
+              <span class="inline-flex items-center h-6 px-2 rounded-full text-xs font-bold bg-<%= doc.type_color %>-soft text-<%= doc.type_color %>"><%= doc.type_label %></span>
+              <span class="text-text-primary font-bold"><%= doc.title %></span>
+            </div>
+            <p class="text-text-muted text-xs mt-1">
+              <%= doc.project.name %> &middot; <%= time_ago_in_words(doc.created_at) %> ago
+              <% if doc.run_passport %> &middot; From Run Passport #<%= doc.run_passport_id %><% end %>
+            </p>
+          </div>
+          <span class="text-text-muted text-xs"><%= doc.status&.capitalize || "Draft" %></span>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+  <% if @documents.empty? %>
+    <div class="text-center py-12 text-text-muted">
+      <p class="text-lg font-bold mb-2">No documents yet</p>
+      <p class="text-sm">Documents are generated from Run Passports or created manually.</p>
+    </div>
+  <% end %>
+</div>

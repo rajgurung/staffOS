@@ -1,0 +1,203 @@
+<%# Header %>
+<div class="flex justify-between items-start mb-5">
+  <div>
+    <div class="flex items-center gap-2.5 mb-1">
+      <span class="w-2.5 h-2.5 rounded-full bg-<%= @workstream.status_color %> <%= @workstream.status == 'active' ? 'animate-pulse' : '' %>"></span>
+      <h1 class="text-[24px] font-[800] tracking-[-0.04em] m-0"><%= @workstream.display_name %></h1>
+      <%= status_pill(@workstream.status.titleize, color: @workstream.status_color.to_sym) %>
+    </div>
+    <p class="text-text-muted text-[13px] mt-1">
+      <code class="text-primary text-[12px]"><%= @workstream.branch_name %></code>
+      &middot; <%= @workstream.project.name %>
+      &middot; <%= @workstream.total_sessions %> sessions
+      &middot; <%= @workstream.total_events %> events
+    </p>
+    <% if @workstream.description.present? %>
+      <p class="text-text-soft text-[13px] mt-2"><%= @workstream.description %></p>
+    <% end %>
+  </div>
+  <div class="flex gap-2">
+    <%= link_to "Edit", edit_workstream_path(@workstream), class: "h-8 px-3 rounded-md btn-secondary text-[12px] font-semibold inline-flex items-center no-underline" %>
+    <% if @workstream.status == "in_review" %>
+      <%= button_to "Mark as Merged", promote_workstream_path(@workstream), class: "h-8 px-3 rounded-md btn-primary text-[12px] font-semibold border-0 cursor-pointer", data: { turbo_confirm: "Merge this workstream? Documents and decisions will be promoted to project level." } %>
+    <% end %>
+  </div>
+</div>
+
+<%# Passport Overview %>
+<% if @passport %>
+  <div class="grid grid-cols-5 gap-3 mb-5 max-xl:grid-cols-3 max-lg:grid-cols-2">
+    <%= card(title: "Readiness") do %>
+      <div class="readiness-ring w-[80px] h-[80px] mx-auto mb-2 grid place-items-center rounded-full">
+        <span class="text-[22px] font-[850]"><%= @passport.readiness_score %>%</span>
+      </div>
+    <% end %>
+
+    <%= card(title: "Risk Level") do %>
+      <p class="text-[24px] font-[850] tracking-[-0.05em] mt-1 m-0 <%= risk_color(@passport.risk_level) %>"><%= @passport.risk_level %></p>
+      <p class="text-text-muted text-[11px] mt-1 m-0">v<%= @passport.current_version %></p>
+    <% end %>
+
+    <%= card(title: "Tests") do %>
+      <p class="text-[24px] font-[850] tracking-[-0.05em] mt-1 m-0 text-success"><%= @passport.test_status %></p>
+    <% end %>
+
+    <%= card(title: "Files") do %>
+      <p class="text-[24px] font-[850] tracking-[-0.05em] mt-1 m-0 text-primary"><%= @files.count %></p>
+      <p class="text-text-muted text-[11px] mt-1 m-0">+<%= @files.sum { |f| f["additions"] } %> -<%= @files.sum { |f| f["deletions"] } %></p>
+    <% end %>
+
+    <%= card(title: "Review") do %>
+      <p class="text-[24px] font-[850] tracking-[-0.05em] mt-1 m-0 <%= @passport.human_review_required? ? 'text-warning' : 'text-success' %>">
+        <%= @passport.human_review_required? ? "Required" : "OK" %>
+      </p>
+    <% end %>
+  </div>
+<% end %>
+
+<%# Version History + Sessions %>
+<div class="grid grid-cols-[1fr_1fr] gap-4 mb-4 max-xl:grid-cols-1">
+  <%# Passport Version History %>
+  <%= card(title: "Passport History") do %>
+    <% if @versions.any? %>
+      <div class="space-y-3">
+        <% @versions.each do |version| %>
+          <div class="p-3 rounded-md border border-panel-border <%= version == @versions.first ? 'bg-primary-soft/50 border-primary/10' : 'bg-bg/50' %>">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[13px] font-[700]">v<%= version.version_number %></span>
+                <%= status_pill(version.risk_level, color: version.risk_color.to_sym) %>
+                <% delta = version.readiness_delta %>
+                <% if delta && delta != 0 %>
+                  <span class="text-[11px] font-semibold <%= delta > 0 ? 'text-success' : 'text-danger' %>">
+                    <%= delta > 0 ? "+#{delta}" : delta %>%
+                  </span>
+                <% end %>
+              </div>
+              <span class="text-[18px] font-[800] tracking-[-0.04em]"><%= version.readiness_score %>%</span>
+            </div>
+            <p class="text-text-muted text-[11px] m-0">
+              <%= version.trigger.titleize %> &middot; <%= version.created_at.strftime("%b %d, %H:%M") %>
+            </p>
+            <% if version.changes_from_previous.present? %>
+              <p class="text-text-soft text-[11px] mt-1 m-0"><%= version.changes_from_previous %></p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-text-muted text-[13px] text-center py-4 m-0">No passport versions yet. Run a council review or complete a session to generate one.</p>
+    <% end %>
+  <% end %>
+
+  <%# Sessions %>
+  <%= card(title: "Sessions") do %>
+    <div class="space-y-2">
+      <% @sessions.each do |session| %>
+        <%= link_to run_path(session), class: "flex items-center justify-between p-2.5 rounded-md border border-panel-border hover:bg-bg transition-colors no-underline" do %>
+          <div class="flex items-center gap-2.5">
+            <span class="w-2 h-2 rounded-full <%= session.status == 'active' ? 'bg-success animate-pulse' : 'bg-text-muted' %>"></span>
+            <div>
+              <p class="text-[12px] font-semibold text-text-primary m-0"><%= session.agent_name %></p>
+              <p class="text-[10px] text-text-muted m-0">
+                <%= session.started_at&.strftime("%b %d, %H:%M") %>
+                <% if session.completed_at %> &middot; <%= ((session.completed_at - session.started_at) / 60).round %> min<% end %>
+              </p>
+            </div>
+          </div>
+          <% if session.run_passport %>
+            <span class="text-[14px] font-[800] tracking-[-0.04em]"><%= session.run_passport.readiness_score %>%</span>
+          <% end %>
+        <% end %>
+      <% end %>
+      <% if @sessions.empty? %>
+        <p class="text-text-muted text-[12px] text-center py-3 m-0">No sessions yet.</p>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<%# Files Touched %>
+<%= card(title: "Cumulative Files Touched") do %>
+  <% if @files.any? %>
+    <div class="space-y-2">
+      <% @files.sort_by { |f| -(f["additions"] + f["deletions"]) }.each do |file| %>
+        <div class="flex items-center justify-between text-[12px] py-1.5 border-b border-panel-border last:border-0">
+          <code class="text-primary text-[11px] truncate max-w-[70%]"><%= file["path"] %></code>
+          <div class="flex items-center gap-2 text-[11px] shrink-0">
+            <span class="text-success font-semibold">+<%= file["additions"] %></span>
+            <span class="text-danger font-semibold">-<%= file["deletions"] %></span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-text-muted text-[12px] text-center py-3 m-0">No files tracked yet.</p>
+  <% end %>
+<% end %>
+
+<%# Council Review (if passport exists) %>
+<% if @passport && @council_reviews.any? %>
+  <div class="mt-4">
+    <%= render "run_passports/council" %>
+  </div>
+<% end %>
+
+<%# Documents & Decisions %>
+<div class="grid grid-cols-2 gap-4 mt-4 max-xl:grid-cols-1">
+  <%= card(title: "Documents") do %>
+    <% if @documents.any? %>
+      <div class="space-y-2">
+        <% @documents.each do |doc| %>
+          <%= link_to document_path(doc), class: "flex items-center gap-2 p-2 rounded-md hover:bg-bg transition-colors no-underline" do %>
+            <span class="inline-flex items-center h-5 px-1.5 rounded text-[9px] font-semibold bg-<%= doc.type_color %>-soft text-<%= doc.type_color %>"><%= doc.document_type.upcase.first(3) %></span>
+            <p class="text-[12px] font-semibold text-text-primary m-0 truncate"><%= doc.title %></p>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-text-muted text-[12px] text-center py-3 m-0">No documents generated yet.</p>
+    <% end %>
+  <% end %>
+
+  <%= card(title: "Decisions") do %>
+    <% if @decisions.any? %>
+      <div class="space-y-2">
+        <% @decisions.each do |log| %>
+          <%= link_to decision_log_path(log), class: "flex items-center gap-2 p-2 rounded-md hover:bg-bg transition-colors no-underline" do %>
+            <%= status_pill(log.status&.capitalize || "Draft", color: log.status_color.to_sym) %>
+            <p class="text-[12px] font-semibold text-text-primary m-0 truncate"><%= log.title %></p>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-text-muted text-[12px] text-center py-3 m-0">No decisions logged yet.</p>
+    <% end %>
+  <% end %>
+</div>
+
+<%# Recent Activity %>
+<%= card(title: "Recent Events", classes: "mt-4") do %>
+  <div class="space-y-0 max-h-[300px] overflow-y-auto">
+    <% @events.each do |event| %>
+      <div class="flex items-start gap-2.5 py-2 border-b border-panel-border last:border-0">
+        <span class="w-[6px] h-[6px] mt-[6px] rounded-full shrink-0
+          <%= case event.event_type
+            when /completed/ then 'bg-success'
+            when /failed|error/ then 'bg-danger'
+            when /edited/ then 'bg-primary'
+            else 'bg-text-muted'
+          end %>"></span>
+        <div class="flex-1 min-w-0">
+          <p class="text-[12px] text-text-primary m-0">
+            <span class="font-semibold"><%= event.event_type.titleize %></span>
+            <% if event.payload["file"] %>
+              <code class="text-primary text-[11px] ml-1"><%= File.basename(event.payload["file"]) %></code>
+            <% end %>
+          </p>
+          <p class="text-[10px] text-text-muted mt-0.5 m-0"><%= event.occurred_at.strftime("%b %d, %H:%M:%S") %></p>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

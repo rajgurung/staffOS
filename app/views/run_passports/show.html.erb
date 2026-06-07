@@ -1,0 +1,215 @@
+<%# Page Header %>
+<div class="flex justify-between items-start mb-4 max-lg:flex-col max-lg:gap-4">
+  <div>
+    <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">
+      Run Passport <%= status_pill("Completed") %>
+    </h1>
+    <p class="text-text-muted text-[13px]">
+      Captured from <span class="text-primary font-semibold"><%= @passport.agent_session.agent_name %></span>
+      &middot; <%= time_ago_in_words(@passport.created_at) %> ago
+    </p>
+  </div>
+
+  <div class="flex gap-2">
+    <div data-controller="clipboard" data-clipboard-text-value="Run Passport #<%= @passport.id %> | <%= @passport.risk_level %> Risk | <%= @passport.readiness_score %>% Ready | <%= @passport.intent %>">
+      <button data-action="clipboard#copy" class="h-8 px-3 btn-secondary rounded-md text-[12px] font-semibold cursor-pointer">Share</button>
+    </div>
+    <%= link_to "Export", export_run_passport_path(@passport, format: :md), class: "h-8 px-3 btn-secondary rounded-md text-[12px] font-semibold inline-flex items-center no-underline" %>
+    <%= link_to "JSON", export_run_passport_path(@passport, format: :json), class: "h-8 px-3 btn-secondary rounded-md text-[12px] font-semibold inline-flex items-center no-underline" %>
+  </div>
+</div>
+
+<%# Review Mode Selector %>
+<div class="flex items-center gap-2 mb-6">
+  <span class="text-text-muted text-[11px] font-semibold uppercase tracking-[0.04em]">Review Mode:</span>
+  <% RunPassport::REVIEW_MODES.each do |mode| %>
+    <% active = (@passport.review_mode || "passive") == mode %>
+    <%= button_to set_review_mode_run_passport_path(@passport, mode: mode),
+      class: "h-7 px-3 rounded-md text-[11px] font-semibold border-0 cursor-pointer transition-all #{active ? 'bg-primary text-white shadow-primary' : 'bg-bg-wash text-text-soft hover:bg-panel-border'}",
+      method: :post do %>
+      <%= mode.titleize.gsub("_", " ") %>
+    <% end %>
+  <% end %>
+  <span class="text-text-muted text-[11px] ml-2"><%= @passport.review_mode_description %></span>
+</div>
+
+<%# Metric Cards %>
+<div class="grid grid-cols-5 gap-4 mb-4 max-xl:grid-cols-2 max-lg:grid-cols-1">
+  <%= card(title: "PR Readiness", classes: "min-h-[146px]") do %>
+    <div class="readiness-ring w-[104px] h-[104px] mx-auto mb-2.5 grid place-items-center rounded-full">
+      <span class="text-[28px] font-[850]"><%= @passport.readiness_score %>%</span>
+    </div>
+    <p class="text-text-muted text-[13px] text-center"><%= @passport.missing_checks&.length || 0 %> checks need attention.</p>
+  <% end %>
+
+  <%= card(title: "Risk Level", classes: "min-h-[146px]") do %>
+    <p class="mt-2 text-[32px] font-[850] tracking-[-0.05em] <%= risk_color(@passport.risk_level) %>"><%= @passport.risk_level %></p>
+    <p class="text-text-muted text-[13px]">Retry logic changed and observability gap detected.</p>
+  <% end %>
+
+  <%= card(title: "Tests", classes: "min-h-[146px]") do %>
+    <p class="mt-2 text-[32px] font-[850] tracking-[-0.05em] text-success"><%= @passport.test_status %></p>
+    <p class="text-text-muted text-[13px]">
+      <% if @passport.test_summary.present? %>
+        <%= @passport.test_summary["total"] %> examples, <%= @passport.test_summary["failed"] %> failures. <%= @passport.test_summary["new_tests"] %> new tests.
+      <% end %>
+    </p>
+  <% end %>
+
+  <%= card(title: "Files Changed", classes: "min-h-[146px]") do %>
+    <p class="mt-2 text-[32px] font-[850] tracking-[-0.05em] text-primary">
+      <%= @passport.files_count %> <span class="text-[14px] font-semibold text-text-muted">Files</span>
+    </p>
+    <p class="text-text-muted text-[13px]">+<%= @passport.total_additions %> additions, -<%= @passport.total_deletions %> deletions</p>
+  <% end %>
+
+  <%= card(title: "Human Review", classes: "min-h-[146px]") do %>
+    <p class="mt-2 text-[32px] font-[850] tracking-[-0.05em] <%= @passport.human_review_required? ? 'text-warning' : 'text-success' %>">
+      <%= @passport.human_review_required? ? "Required" : "Accepted" %>
+    </p>
+    <p class="text-text-muted text-[13px]">
+      <%= @passport.human_review_required? ? "Changes touch retry behaviour and need senior review." : "No high-risk changes detected." %>
+    </p>
+  <% end %>
+</div>
+
+<%# Middle Row: Timeline | Code Diff | Risk Analysis %>
+<div class="grid grid-cols-[1.15fr_1.6fr_1fr] gap-4 mb-4 max-xl:grid-cols-1">
+  <%= card(title: "Timeline", classes: "max-h-[420px] overflow-y-auto") do %>
+    <div class="flex flex-col gap-[18px]">
+      <% @events.each do |event| %>
+        <div class="grid grid-cols-[74px_18px_1fr] gap-3 items-start">
+          <span class="text-text-muted text-xs"><%= event.occurred_at.strftime("%H:%M:%S") %></span>
+          <span class="w-3 h-3 mt-[3px] rounded-full <%= event.event_type.include?('completed') || event.event_type.include?('command_run') ? 'bg-success' : 'bg-primary' %>"></span>
+          <div>
+            <p class="text-[13px] font-[800] m-0"><%= event.event_type.titleize %></p>
+            <p class="text-text-muted text-xs mt-1">
+              <% if event.payload["file"] %>
+                <code class="text-primary"><%= event.payload["file"] %></code>
+              <% elsif event.payload["command"] %>
+                <code class="text-purple"><%= event.payload["command"] %></code>
+              <% elsif event.payload["prompt"] %>
+                <%= truncate(event.payload["prompt"], length: 80) %>
+              <% elsif event.payload["summary"] %>
+                <%= truncate(event.payload["summary"], length: 80) %>
+              <% end %>
+            </p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Code Diff %>
+  <div class="card min-h-[330px]">
+    <div class="flex gap-[22px] border-b border-panel-border px-[18px]">
+      <span class="py-4 pb-3 text-text-primary text-[13px] font-bold tab-active">Changes</span>
+      <span class="py-4 pb-3 text-text-muted text-[13px] font-bold cursor-pointer hover:text-text-soft">Files</span>
+      <span class="py-4 pb-3 text-text-muted text-[13px] font-bold cursor-pointer hover:text-text-soft">Tests</span>
+    </div>
+    <div class="relative p-4">
+      <div class="overflow-hidden border border-panel-border rounded-[14px] bg-bg font-mono text-xs">
+        <div class="px-3.5 py-3 border-b border-panel-border text-text-soft">app/services/inference_callback_handler.rb</div>
+        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 text-text-soft"><span class="text-text-muted text-right">28</span><span>class InferenceCallbackHandler</span></div>
+        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 text-text-soft"><span class="text-text-muted text-right">29</span><span>  def process_callback(payload)</span></div>
+        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-removed"><span class="text-text-muted text-right">30</span><span>-   retry_count = 3</span></div>
+        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">30</span><span>+   return if already_processed?(payload[:idempotency_key])</span></div>
+        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">31</span><span>+   retry_with_backoff(max_attempts: 5) do</span></div>
+        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">32</span><span>+     log_with_correlation(payload) do</span></div>
+        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">33</span><span>+       execute_callback(payload)</span></div>
+        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">34</span><span>+     end</span></div>
+        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">35</span><span>+   end</span></div>
+        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 text-text-soft"><span class="text-text-muted text-right">36</span><span>  end</span></div>
+      </div>
+    </div>
+  </div>
+
+  <%# Risk Analysis %>
+  <%= card(title: "Risk Analysis") do %>
+    <div class="risk-score-ring w-[136px] h-[136px] mx-auto mt-1 mb-[18px] grid place-items-center rounded-full">
+      <div class="text-center">
+        <strong class="text-[34px] tracking-[-0.05em]">6.4</strong>
+        <span class="block text-text-muted text-xs">Medium Risk</span>
+      </div>
+    </div>
+    <div class="space-y-[11px]">
+      <div class="flex justify-between text-text-soft text-[13px]"><span>Retry Logic</span><strong class="text-warning">Medium</strong></div>
+      <div class="flex justify-between text-text-soft text-[13px]"><span>Auth Impact</span><strong class="text-success">None</strong></div>
+      <div class="flex justify-between text-text-soft text-[13px]"><span>Test Coverage</span><strong class="text-success">87.3%</strong></div>
+      <div class="flex justify-between text-text-soft text-[13px]"><span>Observability</span><strong class="text-warning">Gap</strong></div>
+      <div class="flex justify-between text-text-soft text-[13px]"><span>Config Change</span><strong class="text-warning">Yes</strong></div>
+    </div>
+  <% end %>
+</div>
+
+<%# AI Council %>
+<%= render "council" %>
+
+<%# Bottom Row %>
+<div class="grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-4 max-xl:grid-cols-1">
+  <%= card(title: "AI Summary") do %>
+    <p class="text-text-soft text-sm leading-[1.7]"><%= @passport.summary %></p>
+    <div class="flex flex-wrap gap-2 mt-[18px]">
+      <% ["retry-logic", "idempotency", "observability", "callback-handler", "structured-logging"].each do |tag| %>
+        <span class="py-[7px] px-2.5 border border-panel-border rounded-full bg-bg text-text-soft text-xs font-bold"><%= tag %></span>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= card(title: "Suggested PR Summary") do %>
+    <div class="text-text-soft text-sm leading-[1.7] space-y-2">
+      <p class="font-bold text-text-primary">Harden inference callback retry path</p>
+      <ul class="list-disc list-inside space-y-1 text-[13px]">
+        <li>Replace fixed retry with exponential backoff (max 5 attempts)</li>
+        <li>Add idempotency key check to prevent duplicate callback processing</li>
+        <li>Add correlation ID to structured logs across callback pipeline</li>
+        <li>12 new test cases covering retry edge cases</li>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= card(title: "Reviewer Checklist") do %>
+    <div class="flex flex-col gap-[13px]">
+      <% (@passport.recommended_actions || []).each do |action| %>
+        <div class="grid grid-cols-[18px_1fr_auto] gap-2.5 items-center text-text-soft text-[13px]">
+          <span class="w-4 h-4 border border-panel-border rounded"></span>
+          <span><%= action["action"] %></span>
+          <span class="<%= action['priority'] == 'high' ? 'text-danger' : action['priority'] == 'medium' ? 'text-warning' : 'text-success' %> text-xs font-bold uppercase"><%= action["priority"] %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= card(title: "Generate Documentation") do %>
+    <div class="flex flex-col gap-2.5 text-[13px]">
+      <div class="flex items-center justify-between p-3 rounded-md bg-primary-soft border border-primary/10">
+        <div>
+          <p class="font-semibold text-text-primary m-0">ADR Draft</p>
+          <p class="text-text-muted text-[11px] mt-0.5 m-0">Architecture decision record from this session.</p>
+        </div>
+        <%= button_to "Generate", generate_document_run_passport_path(@passport, doc_type: "adr"), class: "h-7 px-3 rounded-md btn-primary text-[11px] font-semibold border-0 cursor-pointer shrink-0" %>
+      </div>
+      <div class="flex items-center justify-between p-3 rounded-md bg-blue-soft border border-blue/10">
+        <div>
+          <p class="font-semibold text-text-primary m-0">Decision Log</p>
+          <p class="text-text-muted text-[11px] mt-0.5 m-0">Structured decision record with rationale.</p>
+        </div>
+        <%= button_to "Generate", generate_document_run_passport_path(@passport, doc_type: "decision_log"), class: "h-7 px-3 rounded-md btn-primary text-[11px] font-semibold border-0 cursor-pointer shrink-0" %>
+      </div>
+      <div class="flex items-center justify-between p-3 rounded-md bg-success-soft border border-success/10">
+        <div>
+          <p class="font-semibold text-text-primary m-0">PR Summary</p>
+          <p class="text-text-muted text-[11px] mt-0.5 m-0">Ready-to-paste pull request description.</p>
+        </div>
+        <%= button_to "Generate", generate_document_run_passport_path(@passport, doc_type: "pr_summary"), class: "h-7 px-3 rounded-md btn-primary text-[11px] font-semibold border-0 cursor-pointer shrink-0" %>
+      </div>
+      <div class="flex items-center justify-between p-3 rounded-md bg-warning-soft border border-warning/10">
+        <div>
+          <p class="font-semibold text-text-primary m-0">Project Memory</p>
+          <p class="text-text-muted text-[11px] mt-0.5 m-0">Save key context for future sessions.</p>
+        </div>
+        <%= button_to "Save", generate_document_run_passport_path(@passport, doc_type: "memory"), class: "h-7 px-3 rounded-md btn-primary text-[11px] font-semibold border-0 cursor-pointer shrink-0" %>
+      </div>
+    </div>
+  <% end %>
+</div>

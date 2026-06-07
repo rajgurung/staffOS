@@ -1,0 +1,26 @@
+<%= form_with(model: decision_log, class: "space-y-6") do |f| %>
+  <% if decision_log.errors.any? %>
+    <div class="p-4 rounded-sm bg-danger-soft border border-danger/20 text-danger text-sm">
+      <% decision_log.errors.full_messages.each do |msg| %><p><%= msg %></p><% end %>
+    </div>
+  <% end %>
+  <% [[:title, "Title", :text_field], [:context, "Context", :text_area], [:decision, "Decision", :text_area], [:rationale, "Rationale", :text_area], [:consequences, "Consequences", :text_area]].each do |field, label, type| %>
+    <div>
+      <label class="block text-text-soft text-sm font-bold mb-2"><%= label %></label>
+      <% if type == :text_field %>
+        <%= f.text_field field, class: "w-full h-11 px-3 border border-panel-border rounded-sm bg-white text-text-primary placeholder:text-text-muted outline-none focus:border-primary/40" %>
+      <% else %>
+        <%= f.text_area field, rows: 4, class: "w-full p-4 border border-panel-border rounded-sm bg-white text-text-soft text-sm placeholder:text-text-muted outline-none focus:border-primary/40 resize-y" %>
+      <% end %>
+    </div>
+  <% end %>
+  <div>
+    <label class="block text-text-soft text-sm font-bold mb-2">Status</label>
+    <%= f.select :status, DecisionLog::STATUSES.map { |s| [s.capitalize, s] },
+      {}, class: "w-full h-11 px-3 border border-panel-border rounded-sm bg-white text-text-primary outline-none focus:border-primary/40" %>
+  </div>
+  <div class="flex gap-3">
+    <%= f.submit class: "h-[42px] px-6 rounded-sm btn-primary font-bold cursor-pointer border-0" %>
+    <%= link_to "Cancel", decision_logs_path, class: "h-[42px] px-4 border border-panel-border rounded-sm bg-white text-text-primary font-bold inline-flex items-center no-underline hover:bg-bg" %>
+  </div>
+<% end %>

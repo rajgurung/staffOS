@@ -1,0 +1,36 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Run Passports</h1>
+    <p class="text-text-muted text-sm">All generated Run Passports from AI coding sessions.</p>
+  </div>
+</div>
+
+<div class="space-y-3">
+  <% @passports.each do |passport| %>
+    <%= link_to run_passport_path(passport), class: "card block no-underline" do %>
+      <div class="relative p-5">
+        <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <p class="text-text-primary font-bold mb-1"><%= passport.intent %></p>
+            <p class="text-text-muted text-xs mt-1">
+              <%= passport.agent_session.agent_name %> &middot;
+              Branch: <span class="text-primary"><%= passport.agent_session.branch_name %></span> &middot;
+              <%= passport.files_count %> files &middot;
+              <%= time_ago_in_words(passport.created_at) %> ago
+            </p>
+          </div>
+          <div class="flex items-center gap-4">
+            <% if passport.human_review_required? %>
+              <span class="text-warning text-xs font-bold">REVIEW NEEDED</span>
+            <% end %>
+            <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
+            <div class="text-right">
+              <span class="text-[24px] font-[850] tracking-[-0.05em]"><%= passport.readiness_score %>%</span>
+              <span class="block text-text-muted text-[11px]">Ready</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+</div>

@@ -1,0 +1,43 @@
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Runs</h1>
+    <p class="text-text-muted text-sm">All AI coding sessions captured by StaffOS.</p>
+  </div>
+</div>
+
+<div class="flex gap-3 mb-6">
+  <% %w[all active completed].each do |status| %>
+    <% active = (params[:status] == status) || (status == "all" && params[:status].blank?) %>
+    <%= link_to status.capitalize,
+      runs_path(status: status == "all" ? nil : status),
+      class: "h-9 px-4 flex items-center rounded-sm text-sm font-bold transition-colors no-underline #{active ? 'btn-primary border-0' : 'border border-panel-border bg-white text-text-soft hover:bg-bg'}" %>
+  <% end %>
+</div>
+
+<div class="space-y-3">
+  <% @sessions.each do |session| %>
+    <%= link_to run_path(session), class: "card block no-underline" do %>
+      <div class="relative p-5">
+        <div class="flex justify-between items-center">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="text-text-primary font-bold"><%= session.agent_name %></span>
+              <%= status_pill(session.status&.capitalize || "Unknown", color: session.status == "completed" ? :success : :info) %>
+            </div>
+            <p class="text-text-muted text-xs">
+              Branch: <span class="text-primary"><%= session.branch_name %></span>
+              &middot; <%= session.project.name %>
+              &middot; Started <%= time_ago_in_words(session.started_at) %> ago
+            </p>
+          </div>
+          <% if session.run_passport %>
+            <div class="flex items-center gap-4">
+              <%= status_pill(session.run_passport.risk_level, color: session.run_passport.risk_color.to_sym) %>
+              <span class="text-lg font-[850] tracking-[-0.05em]"><%= session.run_passport.readiness_score %>%</span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+</div>
