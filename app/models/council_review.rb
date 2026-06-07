@@ -4,11 +4,11 @@ class CouncilReview < ApplicationRecord
 
   PERSONAS = {
     "staff_engineer" => { label: "Staff Engineer", icon: "SE", color: "blue" },
-    "sre" => { label: "SRE Reviewer", icon: "SR", color: "info" },
+    "sre" => { label: "SRE Reviewer", icon: "SR", color: "cyan" },
     "security" => { label: "Security Reviewer", icon: "SC", color: "purple" },
-    "product_manager" => { label: "Product Manager", icon: "PM", color: "success" },
-    "devils_advocate" => { label: "Devil's Advocate", icon: "DA", color: "warning" },
-    "writing_coach" => { label: "Writing Coach", icon: "WC", color: "danger" }
+    "product_manager" => { label: "Product Manager", icon: "PM", color: "teal" },
+    "devils_advocate" => { label: "Devil's Advocate", icon: "DA", color: "orange" },
+    "writing_coach" => { label: "Writing Coach", icon: "WC", color: "rose" }
   }.freeze
 
   STATUSES = %w[pending running completed failed].freeze

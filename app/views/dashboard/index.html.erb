@@ -10,22 +10,22 @@
 
 <%# Stats Row %>
 <div class="grid grid-cols-5 gap-3 mb-5 max-xl:grid-cols-3 max-lg:grid-cols-2">
-  <%= card(title: "Total Runs") do %>
-    <p class="text-[28px] font-[850] tracking-[-0.05em] m-0"><%= @total_runs %></p>
+  <%= card(title: "Total Runs", classes: "card-accent-blue") do %>
+    <p class="text-[28px] font-[850] tracking-[-0.05em] text-blue m-0"><%= @total_runs %></p>
     <p class="text-text-muted text-[12px] mt-1 m-0">sessions captured</p>
   <% end %>
 
-  <%= card(title: "Passports") do %>
+  <%= card(title: "Passports", classes: "card-accent-primary") do %>
     <p class="text-[28px] font-[850] tracking-[-0.05em] text-primary m-0"><%= @total_passports %></p>
     <p class="text-text-muted text-[12px] mt-1 m-0">generated</p>
   <% end %>
 
-  <%= card(title: "Avg Readiness") do %>
-    <p class="text-[28px] font-[850] tracking-[-0.05em] m-0"><%= @avg_readiness %>%</p>
+  <%= card(title: "Avg Readiness", classes: "card-accent-success") do %>
+    <p class="text-[28px] font-[850] tracking-[-0.05em] text-success m-0"><%= @avg_readiness %>%</p>
     <p class="text-text-muted text-[12px] mt-1 m-0">across passports</p>
   <% end %>
 
-  <%= card(title: "Review Required") do %>
+  <%= card(title: "Review Required", classes: "card-accent-warning") do %>
     <p class="text-[28px] font-[850] tracking-[-0.05em] text-warning m-0"><%= @review_required %></p>
     <p class="text-text-muted text-[12px] mt-1 m-0">pending human review</p>
   <% end %>

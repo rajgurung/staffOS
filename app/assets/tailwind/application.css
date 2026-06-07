@@ -2,43 +2,55 @@
 
 @theme {
   /* Surface */
-  --color-bg: #f6f7fb;
+  --color-bg: #f4f5fa;
   --color-bg-soft: #ffffff;
-  --color-bg-wash: #f0f1f8;
-  --color-panel: rgba(255, 255, 255, 0.92);
+  --color-bg-wash: #eef0f6;
+  --color-panel: rgba(255, 255, 255, 0.94);
   --color-panel-solid: #ffffff;
-  --color-panel-border: rgba(15, 23, 42, 0.07);
-  --color-panel-border-strong: rgba(15, 23, 42, 0.12);
+  --color-panel-border: rgba(15, 23, 42, 0.06);
+  --color-panel-border-strong: rgba(15, 23, 42, 0.10);
 
   /* Text */
   --color-text-primary: #0f172a;
-  --color-text-soft: #334155;
+  --color-text-soft: #475569;
   --color-text-muted: #94a3b8;
 
-  /* Primary (indigo) */
-  --color-primary: #5b5ff7;
-  --color-primary-dark: #4338ca;
-  --color-primary-soft: rgba(91, 95, 247, 0.08);
-  --color-primary-medium: rgba(91, 95, 247, 0.14);
+  /* Primary (vibrant indigo) */
+  --color-primary: #6366f1;
+  --color-primary-dark: #4f46e5;
+  --color-primary-soft: rgba(99, 102, 241, 0.10);
+  --color-primary-medium: rgba(99, 102, 241, 0.16);
 
-  /* Accent palette */
-  --color-purple: #7c3aed;
-  --color-purple-soft: rgba(124, 58, 237, 0.07);
+  /* Flat colour palette */
+  --color-purple: #8b5cf6;
+  --color-purple-soft: rgba(139, 92, 246, 0.10);
 
-  --color-blue: #2563eb;
-  --color-blue-soft: rgba(37, 99, 235, 0.07);
+  --color-blue: #3b82f6;
+  --color-blue-soft: rgba(59, 130, 246, 0.10);
 
-  --color-success: #059669;
-  --color-success-soft: rgba(5, 150, 105, 0.07);
+  --color-cyan: #06b6d4;
+  --color-cyan-soft: rgba(6, 182, 212, 0.10);
 
-  --color-warning: #d97706;
-  --color-warning-soft: rgba(217, 119, 6, 0.07);
+  --color-success: #10b981;
+  --color-success-soft: rgba(16, 185, 129, 0.10);
 
-  --color-danger: #dc2626;
-  --color-danger-soft: rgba(220, 38, 38, 0.07);
+  --color-warning: #f59e0b;
+  --color-warning-soft: rgba(245, 158, 11, 0.10);
 
-  --color-info: #0284c7;
-  --color-info-soft: rgba(2, 132, 199, 0.07);
+  --color-danger: #ef4444;
+  --color-danger-soft: rgba(239, 68, 68, 0.10);
+
+  --color-info: #3b82f6;
+  --color-info-soft: rgba(59, 130, 246, 0.10);
+
+  --color-rose: #f43f5e;
+  --color-rose-soft: rgba(244, 63, 94, 0.10);
+
+  --color-teal: #14b8a6;
+  --color-teal-soft: rgba(20, 184, 166, 0.10);
+
+  --color-orange: #f97316;
+  --color-orange-soft: rgba(249, 115, 22, 0.10);
 
   /* Radii */
   --radius-sm: 8px;
@@ -48,19 +60,22 @@
 
   /* Shadows */
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.03);
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.03), 0 6px 20px rgba(15, 23, 42, 0.04);
   --shadow-soft: 0 2px 8px rgba(15, 23, 42, 0.05);
-  --shadow-elevated: 0 4px 24px rgba(15, 23, 42, 0.08);
-  --shadow-primary: 0 4px 14px rgba(91, 95, 247, 0.24);
+  --shadow-elevated: 0 8px 30px rgba(15, 23, 42, 0.08);
+  --shadow-primary: 0 4px 14px rgba(99, 102, 241, 0.25);
 
   /* Fonts */
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
 }
 
-/* Body */
+/* ───── Body ───── */
 body {
-  background: #f6f7fb;
+  background:
+    radial-gradient(ellipse at top left, rgba(99, 102, 241, 0.06), transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(139, 92, 246, 0.04), transparent 50%),
+    #f4f5fa;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.011em;
@@ -73,27 +88,28 @@ body {
   background: var(--color-panel-solid);
   box-shadow: var(--shadow-card);
   overflow: hidden;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
 a.card:hover,
 .card-hover:hover {
   box-shadow: var(--shadow-elevated);
   border-color: var(--color-panel-border-strong);
+  transform: translateY(-1px);
 }
 
 /* ───── Buttons ───── */
 .btn-primary {
-  background: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   color: #fff;
   box-shadow: var(--shadow-primary);
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
 }
 
 .btn-primary:hover {
-  background: var(--color-primary-dark);
-  box-shadow: 0 4px 18px rgba(91, 95, 247, 0.32);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
   transform: translateY(-0.5px);
+  filter: brightness(1.05);
 }
 
 .btn-secondary {
@@ -105,12 +121,11 @@ a.card:hover,
 }
 
 .btn-secondary:hover {
-  background: var(--color-bg);
-  border-color: var(--color-panel-border-strong);
+  background: var(--color-bg-wash);
   box-shadow: var(--shadow-soft);
 }
 
-/* ───── Pills ───── */
+/* ───── Status Pills ───── */
 .pill-running {
   background: var(--color-primary-soft);
   color: var(--color-primary);
@@ -123,7 +138,7 @@ a.card:hover,
 
 .pill-warning {
   background: var(--color-warning-soft);
-  color: var(--color-warning);
+  color: #b45309;
 }
 
 .pill-danger {
@@ -139,15 +154,15 @@ a.card:hover,
 
 /* ───── Code diff ───── */
 .diff-added {
-  background: rgba(5, 150, 105, 0.06);
+  background: rgba(16, 185, 129, 0.08);
   color: #065f46;
-  border-left: 2px solid var(--color-success);
+  border-left: 3px solid var(--color-success);
 }
 
 .diff-removed {
-  background: rgba(220, 38, 38, 0.05);
+  background: rgba(239, 68, 68, 0.06);
   color: #991b1b;
-  border-left: 2px solid var(--color-danger);
+  border-left: 3px solid var(--color-danger);
 }
 
 /* ───── Gauge rings ───── */
@@ -155,14 +170,14 @@ a.card:hover,
   background:
     radial-gradient(circle closest-side, var(--color-bg-soft) 72%, transparent 73%),
     conic-gradient(var(--color-success) 0 72%, var(--color-warning) 72% 88%, var(--color-bg-wash) 88%);
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.12);
 }
 
 .risk-score-ring {
   background:
     radial-gradient(circle closest-side, var(--color-bg-soft) 70%, transparent 71%),
     conic-gradient(var(--color-warning) 0 64%, var(--color-bg-wash) 64%);
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 2px 12px rgba(245, 158, 11, 0.12);
 }
 
 /* ───── Sidebar ───── */
@@ -183,6 +198,18 @@ a.card:hover,
   background: var(--color-primary);
 }
 
+/* ───── Coloured card accents ───── */
+.card-accent-primary { border-top: 3px solid var(--color-primary); }
+.card-accent-success { border-top: 3px solid var(--color-success); }
+.card-accent-warning { border-top: 3px solid var(--color-warning); }
+.card-accent-danger { border-top: 3px solid var(--color-danger); }
+.card-accent-purple { border-top: 3px solid var(--color-purple); }
+.card-accent-blue { border-top: 3px solid var(--color-blue); }
+.card-accent-cyan { border-top: 3px solid var(--color-cyan); }
+.card-accent-teal { border-top: 3px solid var(--color-teal); }
+.card-accent-orange { border-top: 3px solid var(--color-orange); }
+.card-accent-rose { border-top: 3px solid var(--color-rose); }
+
 /* ───── Form inputs ───── */
 input:not([type="checkbox"]):not([type="radio"]),
 select,
@@ -193,16 +220,22 @@ textarea {
 input:not([type="checkbox"]):not([type="radio"]):focus,
 select:focus,
 textarea:focus {
-  border-color: rgba(91, 95, 247, 0.4);
-  box-shadow: 0 0 0 3px rgba(91, 95, 247, 0.08);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
 }
 
 /* ───── Misc ───── */
 ::selection {
-  background: rgba(91, 95, 247, 0.15);
+  background: rgba(99, 102, 241, 0.15);
 }
 
 code {
   font-size: 0.875em;
   letter-spacing: 0;
 }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(15, 23, 42, 0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.2); }
