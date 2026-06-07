@@ -17,7 +17,7 @@
 
 <%= card(title: "2. Add to .claude/settings.json", classes: "mt-4") do %>
   <p class="text-text-soft text-sm mb-3">Add this hooks configuration to your Claude Code settings file:</p>
-  <div class="border border-panel-border rounded-[14px] bg-bg p-4 font-mono text-xs text-text-soft overflow-x-auto" data-controller="clipboard" data-clipboard-text-value='<%= hook_config_json(@project).html_safe %>'>
+  <div class="border border-panel-border rounded-[14px] bg-bg p-4 font-mono text-xs text-text-soft overflow-x-auto" data-controller="clipboard" data-clipboard-text-value='<%= hook_config_json(@project) %>'>
     <pre><%= hook_config_json(@project) %></pre>
   </div>
 <% end %>
