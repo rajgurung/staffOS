@@ -9,22 +9,22 @@
   <nav class="flex-1 space-y-6">
     <div>
       <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">Work</p>
-      <%= sidebar_link "Workstreams", workstreams_path, "workstreams" %>
-      <%= sidebar_link "Risk Cockpit", risk_cockpit_path, "risk" %>
+      <%= sidebar_link "Workstreams", workstreams_path, "workstreams", icon: "workstreams" %>
+      <%= sidebar_link "Risk Cockpit", risk_cockpit_path, "risk", icon: "risk" %>
     </div>
 
     <div>
       <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">Project Knowledge</p>
-      <%= sidebar_link "Decisions", decision_logs_path, "decisions" %>
-      <%= sidebar_link "Documentation", documents_path, "docs" %>
-      <%= sidebar_link "Memory", memory_items_path, "memory" %>
+      <%= sidebar_link "Decisions", decision_logs_path, "decisions", icon: "decisions" %>
+      <%= sidebar_link "Documentation", documents_path, "docs", icon: "docs" %>
+      <%= sidebar_link "Memory", memory_items_path, "memory", icon: "memory" %>
     </div>
 
     <div>
       <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">System</p>
-      <%= sidebar_link "Sessions", runs_path, "runs" %>
-      <%= sidebar_link "Run Passports", run_passports_path, "passports" %>
-      <%= sidebar_link "Projects", projects_path, "projects" %>
+      <%= sidebar_link "Sessions", runs_path, "runs", icon: "sessions" %>
+      <%= sidebar_link "Run Passports", run_passports_path, "passports", icon: "passports" %>
+      <%= sidebar_link "Projects", projects_path, "projects", icon: "projects" %>
     </div>
 
     <%# Active Workstreams quick list %>
