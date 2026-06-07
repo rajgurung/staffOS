@@ -1,40 +1,43 @@
 <div class="flex justify-between items-start mb-6">
   <div>
-    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Decisions</h1>
-    <p class="text-text-muted text-sm">Engineering decisions extracted from AI coding sessions.</p>
+    <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">Project Decisions</h1>
+    <p class="text-text-muted text-[13px]">Engineering decisions promoted from merged workstreams.</p>
   </div>
-  <%= link_to "New Decision", new_decision_log_path, class: "h-[42px] px-4 rounded-sm btn-primary font-bold cursor-pointer border-0 inline-flex items-center no-underline" %>
+  <%= link_to "New Decision", new_decision_log_path, class: "h-8 px-3 rounded-md btn-primary text-[12px] font-semibold cursor-pointer border-0 inline-flex items-center no-underline" %>
 </div>
 
-<div class="flex gap-3 mb-6">
+<div class="flex gap-2 mb-5">
   <% [["All", nil], ["Active", "active"], ["Draft", "draft"], ["Superseded", "superseded"]].each do |label, status| %>
     <% active = params[:status] == status || (status.nil? && params[:status].blank?) %>
     <%= link_to label, decision_logs_path(status: status),
-      class: "h-9 px-4 flex items-center rounded-sm text-sm font-bold transition-colors no-underline #{active ? 'btn-primary border-0' : 'border border-panel-border bg-white text-text-soft hover:bg-bg'}" %>
+      class: "h-8 px-3 flex items-center rounded-md text-[12px] font-semibold transition-colors no-underline #{active ? 'bg-primary text-white shadow-primary' : 'btn-secondary'}" %>
   <% end %>
 </div>
 
-<div class="space-y-3">
+<div class="space-y-2">
   <% @decision_logs.each do |log| %>
-    <%= link_to decision_log_path(log), class: "card block no-underline" do %>
-      <div class="relative p-5">
+    <%= link_to decision_log_path(log), class: "card card-hover block no-underline" do %>
+      <div class="relative p-4">
         <div class="flex justify-between items-center">
-          <div class="flex-1">
-            <div class="flex items-center gap-3 mb-1">
-              <%= status_pill(log.status&.capitalize || "Draft", color: log.status_color.to_sym) %>
-              <span class="text-text-primary font-bold"><%= log.title %></span>
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <%= status_pill(log.status&.capitalize || "Draft", color: log.status_color.to_sym) %>
+            <div class="min-w-0">
+              <p class="text-[13px] font-semibold text-text-primary m-0 truncate"><%= log.title %></p>
+              <p class="text-[11px] text-text-muted mt-0.5 m-0">
+                <% if log.workstream %><code class="text-primary text-[10px]"><%= log.workstream.branch_name %></code> &middot; <% end %>
+                <%= truncate(log.decision, length: 60) %>
+              </p>
             </div>
-            <p class="text-text-muted text-xs mt-1"><%= truncate(log.decision, length: 120) %></p>
           </div>
-          <span class="text-text-muted text-xs"><%= time_ago_in_words(log.created_at) %> ago</span>
+          <span class="text-text-muted text-[11px] shrink-0"><%= time_ago_in_words(log.created_at) %> ago</span>
         </div>
       </div>
     <% end %>
   <% end %>
   <% if @decision_logs.empty? %>
     <div class="text-center py-12 text-text-muted">
-      <p class="text-lg font-bold mb-2">No decisions logged yet</p>
-      <p class="text-sm">Decisions are extracted from Run Passports or created manually.</p>
+      <p class="font-semibold mb-1">No project-level decisions yet</p>
+      <p class="text-[13px]">Decisions are captured within workstreams and promoted here when the branch merges.</p>
     </div>
   <% end %>
 </div>

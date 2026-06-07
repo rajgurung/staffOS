@@ -1,34 +1,33 @@
 <div class="flex justify-between items-start mb-6">
   <div>
-    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Project Memory</h1>
-    <p class="text-text-muted text-sm">Reusable context and knowledge captured from AI sessions.</p>
+    <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">Project Memory</h1>
+    <p class="text-text-muted text-[13px]">Reusable context promoted from merged workstreams.</p>
   </div>
-  <%= link_to "Add Memory", new_memory_item_path, class: "h-[42px] px-4 rounded-sm btn-primary font-bold cursor-pointer border-0 inline-flex items-center no-underline" %>
+  <%= link_to "Add Memory", new_memory_item_path, class: "h-8 px-3 rounded-md btn-primary text-[12px] font-semibold cursor-pointer border-0 inline-flex items-center no-underline" %>
 </div>
 
-<div class="flex gap-3 mb-6">
+<div class="flex gap-2 mb-5">
   <% [["All", nil]].concat(MemoryItem::TYPES.map { |t| [t.capitalize, t] }).each do |label, type| %>
     <% active = params[:type] == type || (type.nil? && params[:type].blank?) %>
     <%= link_to label, memory_items_path(type: type),
-      class: "h-9 px-4 flex items-center rounded-sm text-sm font-bold transition-colors no-underline #{active ? 'btn-primary border-0' : 'border border-panel-border bg-white text-text-soft hover:bg-bg'}" %>
+      class: "h-8 px-3 flex items-center rounded-md text-[12px] font-semibold transition-colors no-underline #{active ? 'bg-primary text-white shadow-primary' : 'btn-secondary'}" %>
   <% end %>
 </div>
 
-<div class="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
+<div class="grid grid-cols-2 gap-3 max-xl:grid-cols-1">
   <% @memory_items.each do |item| %>
-    <%= link_to memory_item_path(item), class: "card block no-underline" do %>
-      <div class="relative p-5">
-        <div class="flex items-center gap-3 mb-2">
-          <span class="inline-flex items-center h-6 px-2 rounded-full text-xs font-bold bg-<%= item.type_color %>-soft text-<%= item.type_color %>"><%= item.memory_type.capitalize %></span>
+    <%= link_to memory_item_path(item), class: "card card-hover block no-underline" do %>
+      <div class="relative p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="inline-flex items-center h-5 px-1.5 rounded text-[9px] font-semibold bg-<%= item.type_color %>-soft text-<%= item.type_color %>"><%= item.memory_type.capitalize %></span>
           <% if item.confidence %>
-            <span class="text-text-muted text-xs"><%= (item.confidence * 100).round %>% confidence</span>
+            <span class="text-text-muted text-[10px]"><%= (item.confidence * 100).round %>%</span>
+          <% end %>
+          <% if item.workstream %>
+            <code class="text-primary text-[10px]"><%= item.workstream.branch_name %></code>
           <% end %>
         </div>
-        <p class="text-text-soft text-sm leading-[1.6]"><%= truncate(item.content, length: 200) %></p>
-        <p class="text-text-muted text-xs mt-2">
-          <%= item.project.name %>
-          <% if item.expires_at %> &middot; Expires <%= time_ago_in_words(item.expires_at) %><% end %>
-        </p>
+        <p class="text-text-soft text-[13px] leading-[1.5] m-0"><%= truncate(item.content, length: 150) %></p>
       </div>
     <% end %>
   <% end %>
@@ -36,7 +35,7 @@
 
 <% if @memory_items.empty? %>
   <div class="text-center py-12 text-text-muted">
-    <p class="text-lg font-bold mb-2">No memory items yet</p>
-    <p class="text-sm">Memory items capture reusable context from AI sessions and documents.</p>
+    <p class="font-semibold mb-1">No project-level memory yet</p>
+    <p class="text-[13px]">Memory items are captured within workstreams and promoted here when the branch merges.</p>
   </div>
 <% end %>

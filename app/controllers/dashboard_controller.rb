@@ -1,19 +1,24 @@
 class DashboardController < ApplicationController
   def index
-    @total_runs = AgentSession.count
-    @total_passports = RunPassport.count
-    @review_required = RunPassport.where(human_review_required: true).count
-    @active_runs = AgentSession.where(status: "active").includes(:project).order(started_at: :desc).limit(5)
-    @recent_passports = RunPassport.includes(agent_session: :project).order(created_at: :desc).limit(5)
-    @recent_events = RunEvent.includes(agent_session: :project).order(occurred_at: :desc).limit(12)
+    return unless current_project
 
-    passports = RunPassport.all
+    sessions = current_project.agent_sessions
+    passports = current_project.run_passports
+
+    @total_runs = sessions.count
+    @total_passports = passports.count
+    @review_required = passports.where(human_review_required: true).count
+    @active_runs = sessions.where(status: "active").order(started_at: :desc).limit(5)
+    @recent_passports = passports.includes(:agent_session).order(created_at: :desc).limit(5)
+    @recent_events = RunEvent.joins(:agent_session).where(agent_sessions: { project_id: current_project.id }).order(occurred_at: :desc).limit(12)
+
     @high_risk = passports.where(risk_level: "High").count
     @medium_risk = passports.where(risk_level: "Medium").count
     @low_risk = passports.where(risk_level: "Low").count
     @avg_readiness = passports.average(:readiness_score)&.round(0) || 0
 
-    @recent_documents = Document.order(created_at: :desc).limit(3)
-    @recent_decisions = DecisionLog.order(created_at: :desc).limit(3)
+    @active_workstreams = current_project.workstreams.active.recent.limit(5)
+    @recent_documents = current_project.documents.order(created_at: :desc).limit(3)
+    @recent_decisions = current_project.decision_logs.order(created_at: :desc).limit(3)
   end
 end

@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   root "dashboard#index"
 
   get "dashboard", to: "dashboard#index", as: :dashboard
+  post "switch_project", to: "application#switch_project", as: :switch_project
   get "risk_cockpit", to: "risk_cockpit#index", as: :risk_cockpit
 
   resources :workstreams, only: [:index, :show, :edit, :update] do

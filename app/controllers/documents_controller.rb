@@ -2,7 +2,7 @@ class DocumentsController < ApplicationController
   before_action :set_document, only: [:show, :edit, :update, :destroy]
 
   def index
-    @documents = Document.includes(:project, :run_passport).order(created_at: :desc)
+    @documents = current_project.documents.includes(:workstream, :run_passport).order(created_at: :desc)
     @documents = @documents.where(document_type: params[:type]) if params[:type].present?
   end
 
@@ -15,7 +15,7 @@ class DocumentsController < ApplicationController
 
   def create
     @document = Document.new(document_params)
-    @document.project = Project.first
+    @document.project = current_project
     if @document.save
       redirect_to @document, notice: "Document created."
     else

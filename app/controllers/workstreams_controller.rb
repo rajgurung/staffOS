@@ -2,7 +2,7 @@ class WorkstreamsController < ApplicationController
   before_action :set_workstream, only: [:show, :edit, :update, :promote]
 
   def index
-    @workstreams = Workstream.includes(:project).recent
+    @workstreams = current_project ? current_project.workstreams.recent : Workstream.none
     @workstreams = @workstreams.where(status: params[:status]) if params[:status].present?
   end
 

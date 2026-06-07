@@ -2,7 +2,7 @@ class MemoryItemsController < ApplicationController
   before_action :set_memory_item, only: [:show, :edit, :update, :destroy]
 
   def index
-    @memory_items = MemoryItem.includes(:project).active.order(created_at: :desc)
+    @memory_items = current_project.memory_items.includes(:workstream).active.order(created_at: :desc)
     @memory_items = @memory_items.by_type(params[:type]) if params[:type].present?
   end
 
@@ -15,7 +15,7 @@ class MemoryItemsController < ApplicationController
 
   def create
     @memory_item = MemoryItem.new(memory_item_params)
-    @memory_item.project = Project.first
+    @memory_item.project = current_project
     if @memory_item.save
       redirect_to @memory_item, notice: "Memory item created."
     else

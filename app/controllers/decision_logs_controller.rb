@@ -2,7 +2,7 @@ class DecisionLogsController < ApplicationController
   before_action :set_decision_log, only: [:show, :edit, :update, :destroy]
 
   def index
-    @decision_logs = DecisionLog.includes(:project).order(created_at: :desc)
+    @decision_logs = current_project.decision_logs.includes(:workstream).order(created_at: :desc)
     @decision_logs = @decision_logs.where(status: params[:status]) if params[:status].present?
   end
 
@@ -15,7 +15,7 @@ class DecisionLogsController < ApplicationController
 
   def create
     @decision_log = DecisionLog.new(decision_log_params)
-    @decision_log.project = Project.first
+    @decision_log.project = current_project
     if @decision_log.save
       redirect_to @decision_log, notice: "Decision log created."
     else

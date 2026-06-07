@@ -2,7 +2,7 @@ class RunPassportsController < ApplicationController
   before_action :set_passport, only: [:show, :run_council, :generate_document, :export, :set_review_mode]
 
   def index
-    @passports = RunPassport.order(created_at: :desc)
+    @passports = current_project.run_passports.includes(:agent_session).order(created_at: :desc)
   end
 
   def show

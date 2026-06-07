@@ -1,43 +1,44 @@
 <div class="flex justify-between items-start mb-6">
   <div>
-    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Documentation</h1>
-    <p class="text-text-muted text-sm">ADRs, decision logs, PR summaries, and risk items generated from AI sessions.</p>
+    <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">Project Documentation</h1>
+    <p class="text-text-muted text-[13px]">Knowledge promoted from merged workstreams, plus project-level docs.</p>
   </div>
-  <%= link_to "New Document", new_document_path, class: "h-[42px] px-4 rounded-sm btn-primary font-bold cursor-pointer border-0 inline-flex items-center no-underline" %>
+  <%= link_to "New Document", new_document_path, class: "h-8 px-3 rounded-md btn-primary text-[12px] font-semibold cursor-pointer border-0 inline-flex items-center no-underline" %>
 </div>
 
-<div class="flex gap-3 mb-6">
-  <% [["All", nil], ["ADRs", "adr"], ["Decision Logs", "decision_log"], ["PR Summaries", "pr_summary"], ["Risk Items", "risk_item"]].each do |label, type| %>
+<div class="flex gap-2 mb-5">
+  <% [["All", nil], ["ADRs", "adr"], ["PR Summaries", "pr_summary"], ["Risk Items", "risk_item"]].each do |label, type| %>
     <% active = params[:type] == type || (type.nil? && params[:type].blank?) %>
     <%= link_to label, documents_path(type: type),
-      class: "h-9 px-4 flex items-center rounded-sm text-sm font-bold transition-colors no-underline #{active ? 'btn-primary border-0' : 'border border-panel-border bg-white text-text-soft hover:bg-bg'}" %>
+      class: "h-8 px-3 flex items-center rounded-md text-[12px] font-semibold transition-colors no-underline #{active ? 'bg-primary text-white shadow-primary' : 'btn-secondary'}" %>
   <% end %>
 </div>
 
-<div class="space-y-3">
+<div class="space-y-2">
   <% @documents.each do |doc| %>
-    <%= link_to document_path(doc), class: "card block no-underline" do %>
-      <div class="relative p-5">
+    <%= link_to document_path(doc), class: "card card-hover block no-underline" do %>
+      <div class="relative p-4">
         <div class="flex justify-between items-center">
-          <div>
-            <div class="flex items-center gap-3 mb-1">
-              <span class="inline-flex items-center h-6 px-2 rounded-full text-xs font-bold bg-<%= doc.type_color %>-soft text-<%= doc.type_color %>"><%= doc.type_label %></span>
-              <span class="text-text-primary font-bold"><%= doc.title %></span>
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <span class="inline-flex items-center h-5 px-1.5 rounded text-[9px] font-semibold shrink-0 bg-<%= doc.type_color %>-soft text-<%= doc.type_color %>"><%= doc.document_type.upcase.first(3) %></span>
+            <div class="min-w-0">
+              <p class="text-[13px] font-semibold text-text-primary m-0 truncate"><%= doc.title %></p>
+              <p class="text-[11px] text-text-muted mt-0.5 m-0">
+                <%= doc.project.name %>
+                <% if doc.workstream %>&middot; <code class="text-primary text-[10px]"><%= doc.workstream.branch_name %></code><% end %>
+                &middot; <%= time_ago_in_words(doc.created_at) %> ago
+              </p>
             </div>
-            <p class="text-text-muted text-xs mt-1">
-              <%= doc.project.name %> &middot; <%= time_ago_in_words(doc.created_at) %> ago
-              <% if doc.run_passport %> &middot; From Run Passport #<%= doc.run_passport_id %><% end %>
-            </p>
           </div>
-          <span class="text-text-muted text-xs"><%= doc.status&.capitalize || "Draft" %></span>
+          <span class="text-text-muted text-[11px] font-medium shrink-0"><%= doc.status&.capitalize || "Draft" %></span>
         </div>
       </div>
     <% end %>
   <% end %>
   <% if @documents.empty? %>
     <div class="text-center py-12 text-text-muted">
-      <p class="text-lg font-bold mb-2">No documents yet</p>
-      <p class="text-sm">Documents are generated from Run Passports or created manually.</p>
+      <p class="font-semibold mb-1">No project-level documents yet</p>
+      <p class="text-[13px]">Documents are generated within workstreams and promoted here when the branch merges.</p>
     </div>
   <% end %>
 </div>

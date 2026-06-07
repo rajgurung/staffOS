@@ -1,12 +1,33 @@
 <header class="h-14 flex items-center justify-between gap-4 px-6 border-b border-panel-border bg-white max-lg:px-4">
-  <div class="flex items-center gap-3">
-    <div class="h-8 flex items-center gap-2 px-3 border border-panel-border rounded-md bg-bg text-[13px] font-semibold text-text-primary cursor-pointer hover:border-panel-border-strong transition-colors">
+  <%# Project Switcher %>
+  <div class="relative" data-controller="dropdown">
+    <button data-action="dropdown#toggle" class="h-8 flex items-center gap-2 px-3 border border-panel-border rounded-md bg-bg text-[13px] font-semibold text-text-primary cursor-pointer hover:border-panel-border-strong transition-colors">
       <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
-      AI Peer Review Pipeline
+      <%= current_project&.name || "Select Project" %>
       <svg class="w-3.5 h-3.5 text-text-muted ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </button>
+
+    <div data-dropdown-target="menu" class="hidden absolute top-10 left-0 w-64 border border-panel-border rounded-lg bg-white shadow-elevated z-50">
+      <div class="p-2">
+        <% Project.order(:name).each do |project| %>
+          <%= button_to switch_project_path(project_id: project.id), class: "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left text-[13px] transition-colors cursor-pointer border-0 #{project.id == current_project&.id ? 'bg-primary-soft text-primary-dark font-semibold' : 'bg-transparent text-text-soft hover:bg-bg hover:text-text-primary'}" do %>
+            <span class="w-1.5 h-1.5 rounded-full <%= project.id == current_project&.id ? 'bg-primary' : 'bg-text-muted' %>"></span>
+            <div class="min-w-0 flex-1">
+              <p class="m-0 truncate"><%= project.name %></p>
+              <p class="m-0 text-[10px] text-text-muted truncate"><%= project.repo_name %></p>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+      <div class="border-t border-panel-border p-2">
+        <%= link_to new_project_path, class: "flex items-center gap-2 px-3 py-2 rounded-md text-[12px] text-text-muted hover:text-text-primary hover:bg-bg transition-colors no-underline" do %>
+          <span class="text-[14px]">+</span> New Project
+        <% end %>
+      </div>
     </div>
   </div>
 
+  <%# Search %>
   <div class="flex-1 max-w-md">
     <%= form_tag search_path, method: :get, class: "w-full" do %>
       <input name="q" value="<%= params[:q] %>"
@@ -15,6 +36,7 @@
     <% end %>
   </div>
 
+  <%# Actions %>
   <div class="flex items-center gap-2">
     <button class="w-8 h-8 rounded-md border border-panel-border bg-bg grid place-items-center text-text-muted hover:text-text-primary hover:border-panel-border-strong transition-colors">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>

@@ -10,22 +10,36 @@
     <div>
       <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">Work</p>
       <%= sidebar_link "Workstreams", workstreams_path, "workstreams" %>
-      <%= sidebar_link "Run Passports", run_passports_path, "passports" %>
       <%= sidebar_link "Risk Cockpit", risk_cockpit_path, "risk" %>
     </div>
 
     <div>
-      <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">Knowledge</p>
+      <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">Project Knowledge</p>
       <%= sidebar_link "Decisions", decision_logs_path, "decisions" %>
       <%= sidebar_link "Documentation", documents_path, "docs" %>
-      <%= sidebar_link "Project Memory", memory_items_path, "memory" %>
+      <%= sidebar_link "Memory", memory_items_path, "memory" %>
     </div>
 
     <div>
       <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">System</p>
       <%= sidebar_link "Sessions", runs_path, "runs" %>
+      <%= sidebar_link "Run Passports", run_passports_path, "passports" %>
       <%= sidebar_link "Projects", projects_path, "projects" %>
     </div>
+
+    <%# Active Workstreams quick list %>
+    <% active_workstreams = current_project&.workstreams&.active&.recent&.limit(5) || [] %>
+    <% if active_workstreams.any? %>
+      <div>
+        <p class="px-3 mb-1 text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase">Active Branches</p>
+        <% active_workstreams.each do |ws| %>
+          <%= link_to workstream_path(ws), class: "flex items-center gap-2 h-7 px-3 rounded-md text-[12px] no-underline transition-colors #{current_page?(workstream_path(ws)) ? 'sidebar-active' : 'text-text-soft hover:text-text-primary hover:bg-bg'}" do %>
+            <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+            <span class="truncate"><%= ws.branch_name %></span>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
   </nav>
 
   <div class="px-3 pt-4 border-t border-panel-border">

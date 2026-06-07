@@ -1,6 +1,6 @@
 class AgentSessionsController < ApplicationController
   def index
-    @sessions = AgentSession.includes(:project, :run_passport).order(started_at: :desc)
+    @sessions = current_project.agent_sessions.includes(:run_passport).order(started_at: :desc)
     @sessions = @sessions.where(status: params[:status]) if params[:status].present?
     @sessions = @sessions.where("branch_name ILIKE ?", "%#{params[:branch]}%") if params[:branch].present?
   end

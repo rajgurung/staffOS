@@ -148,6 +148,49 @@ Stack: Rails 8, Hotwire/Turbo/Stimulus, Tailwind CSS, PostgreSQL
 
 ## 14. Data model
 
+### Data Hierarchy
+
+The user is the workspace. No multi-org for now. A Project = a repo. Everything is scoped to a project. Zero cross-project data leaking.
+
+```
+USER WORKSPACE (e.g. Raj's Workspace)
+  |
+  +-- PROJECT: "Admin App" (repo: org/admin)
+  |   |
+  |   +-- WORKSTREAM: feature/user-roles (branch)
+  |   |   +-- Sessions, Events
+  |   |   +-- Passport (with versions)
+  |   |   +-- Council Reviews
+  |   |   +-- Documents, Decisions, Memory
+  |   |
+  |   +-- WORKSTREAM: fix/auth-bug (branch)
+  |   |   +-- (completely isolated from above)
+  |   |
+  |   +-- PROJECT KNOWLEDGE (promoted from merged workstreams)
+  |       +-- Documents  <-- merged from feature/user-roles
+  |       +-- Decisions  <-- merged from fix/auth-bug
+  |       +-- Memory     <-- accumulated from all merged branches
+  |
+  +-- PROJECT: "Clinical App" (repo: org/clinical)
+  |   |
+  |   +-- WORKSTREAM: feature/patient-records
+  |   |   +-- (its own docs, decisions, memory)
+  |   |
+  |   +-- PROJECT KNOWLEDGE
+  |       +-- (only clinical app knowledge here, nothing from Admin App)
+  |
+  +-- PROJECT: "StaffOS" (repo: rajgurung/staffOS)
+      +-- (completely separate world)
+```
+
+### Scoping Rules
+
+1. Project = repo. Hard boundary. Nothing crosses it.
+2. Switching projects in the topbar changes everything: dashboard, workstreams, docs, decisions, memory, risk cockpit.
+3. Workstream = branch on that repo. Scoped to its project.
+4. Active knowledge lives in the workstream while the branch is open.
+5. On merge, knowledge promotes to that project's knowledge base only.
+
 ### Workstream Architecture
 
 A Workstream maps 1:1 to a Git branch. It is the primary organizing entity in StaffOS. Multiple sessions on the same branch share a Workstream. All artifacts (passports, documents, decisions, memory) belong to the Workstream until it merges, at which point they promote to the project level.
