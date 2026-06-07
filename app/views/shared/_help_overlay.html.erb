@@ -1,0 +1,140 @@
+<div data-help-target="overlay" class="hidden fixed inset-0 z-50">
+  <%# Backdrop %>
+  <div class="absolute inset-0 bg-black/20 backdrop-blur-sm" data-action="click->help#close"></div>
+
+  <%# Panel %>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] overflow-y-auto bg-white rounded-xl shadow-elevated border border-panel-border">
+    <div class="sticky top-0 bg-white border-b border-panel-border px-6 py-4 flex items-center justify-between">
+      <div>
+        <h2 class="text-[18px] font-[800] tracking-[-0.04em] m-0">Quick Reference</h2>
+        <p class="text-text-muted text-[12px] m-0 mt-0.5">Press <kbd class="px-1.5 py-0.5 rounded bg-bg border border-panel-border text-[10px] font-mono">Cmd /</kbd> to toggle</p>
+      </div>
+      <button data-action="help#close" class="w-8 h-8 rounded-md bg-bg border border-panel-border grid place-items-center text-text-muted hover:text-text-primary cursor-pointer">&times;</button>
+    </div>
+
+    <div class="p-6 space-y-6">
+      <%# Concepts %>
+      <div>
+        <h3 class="text-[13px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-3">Core Concepts</h3>
+        <div class="space-y-3">
+          <div class="flex gap-3 p-3 rounded-lg bg-bg border border-panel-border">
+            <span class="w-9 h-9 rounded-lg bg-primary-soft text-primary grid place-items-center text-[12px] font-bold shrink-0">WS</span>
+            <div>
+              <p class="text-[13px] font-semibold text-text-primary m-0">Workstream</p>
+              <p class="text-[12px] text-text-soft m-0 mt-0.5">A Git branch. Everything groups under it: sessions, passport, docs, decisions. When the branch merges, knowledge promotes to project level.</p>
+            </div>
+          </div>
+
+          <div class="flex gap-3 p-3 rounded-lg bg-bg border border-panel-border">
+            <span class="w-9 h-9 rounded-lg bg-success-soft text-success grid place-items-center text-[12px] font-bold shrink-0">PP</span>
+            <div>
+              <p class="text-[13px] font-semibold text-text-primary m-0">Passport</p>
+              <p class="text-[12px] text-text-soft m-0 mt-0.5">The health report for a workstream. Shows readiness score, risk level, files touched, test evidence, and what needs review. Evolves with each session via version snapshots.</p>
+            </div>
+          </div>
+
+          <div class="flex gap-3 p-3 rounded-lg bg-bg border border-panel-border">
+            <span class="w-9 h-9 rounded-lg bg-purple-soft text-purple grid place-items-center text-[12px] font-bold shrink-0">AC</span>
+            <div>
+              <p class="text-[13px] font-semibold text-text-primary m-0">AI Council</p>
+              <p class="text-[12px] text-text-soft m-0 mt-0.5">Six AI personas that review a passport: Staff Engineer, SRE, Security, PM, Devil's Advocate, Writing Coach. Each scores and provides findings from their discipline.</p>
+            </div>
+          </div>
+
+          <div class="flex gap-3 p-3 rounded-lg bg-bg border border-panel-border">
+            <span class="w-9 h-9 rounded-lg bg-blue-soft text-blue grid place-items-center text-[12px] font-bold shrink-0">SN</span>
+            <div>
+              <p class="text-[13px] font-semibold text-text-primary m-0">Session</p>
+              <p class="text-[12px] text-text-soft m-0 mt-0.5">A single Claude Code usage period. Just a time container. Multiple sessions can happen on the same workstream. Events from sessions route to the right workstream by branch.</p>
+            </div>
+          </div>
+
+          <div class="flex gap-3 p-3 rounded-lg bg-bg border border-panel-border">
+            <span class="w-9 h-9 rounded-lg bg-orange-soft text-orange grid place-items-center text-[12px] font-bold shrink-0">PJ</span>
+            <div>
+              <p class="text-[13px] font-semibold text-text-primary m-0">Project</p>
+              <p class="text-[12px] text-text-soft m-0 mt-0.5">A Git repository. Hard data boundary. Switch projects in the topbar dropdown. All workstreams, docs, and decisions are scoped to the current project.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Review Modes %>
+      <div>
+        <h3 class="text-[13px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-3">Review Modes</h3>
+        <div class="space-y-2">
+          <div class="flex items-start gap-3 p-2.5 rounded-md bg-bg">
+            <span class="pill-running h-[22px] px-2 rounded-md text-[11px] font-semibold shrink-0">Passive</span>
+            <p class="text-[12px] text-text-soft m-0">Timeline and events only. No AI analysis. Just the raw recording of what happened.</p>
+          </div>
+          <div class="flex items-start gap-3 p-2.5 rounded-md bg-bg">
+            <span class="pill-warning h-[22px] px-2 rounded-md text-[11px] font-semibold shrink-0">Smart Summary</span>
+            <p class="text-[12px] text-text-soft m-0">AI-generated summary and risk extraction. Uses a faster model to enrich the passport narrative.</p>
+          </div>
+          <div class="flex items-start gap-3 p-2.5 rounded-md bg-bg">
+            <span class="pill-ready h-[22px] px-2 rounded-md text-[11px] font-semibold shrink-0">Full Council</span>
+            <p class="text-[12px] text-text-soft m-0">All 6 AI personas review the change. Each provides findings, a score, and a recommendation. Synthesized into an overall verdict.</p>
+          </div>
+        </div>
+      </div>
+
+      <%# Risk Levels %>
+      <div>
+        <h3 class="text-[13px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-3">Risk Levels</h3>
+        <div class="space-y-2">
+          <div class="flex items-center gap-3 p-2.5 rounded-md bg-bg">
+            <span class="pill-ready h-[22px] px-2 rounded-md text-[11px] font-semibold shrink-0">Low</span>
+            <p class="text-[12px] text-text-soft m-0">Docs, tests, or small refactors with tests passing. No sensitive files touched.</p>
+          </div>
+          <div class="flex items-center gap-3 p-2.5 rounded-md bg-bg">
+            <span class="pill-warning h-[22px] px-2 rounded-md text-[11px] font-semibold shrink-0">Medium</span>
+            <p class="text-[12px] text-text-soft m-0">Service logic, retry/queue changes, API contracts, config changes, or partial test coverage.</p>
+          </div>
+          <div class="flex items-center gap-3 p-2.5 rounded-md bg-bg">
+            <span class="pill-danger h-[22px] px-2 rounded-md text-[11px] font-semibold shrink-0">High</span>
+            <p class="text-[12px] text-text-soft m-0">Auth, payments, infra, migrations, production config, or no tests on behavioural changes.</p>
+          </div>
+        </div>
+      </div>
+
+      <%# Keyboard Shortcuts %>
+      <div>
+        <h3 class="text-[13px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-3">Shortcuts</h3>
+        <div class="grid grid-cols-2 gap-2 text-[12px]">
+          <div class="flex items-center justify-between p-2 rounded-md bg-bg">
+            <span class="text-text-soft">Quick reference</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-white border border-panel-border text-[10px] font-mono">Cmd /</kbd>
+          </div>
+          <div class="flex items-center justify-between p-2 rounded-md bg-bg">
+            <span class="text-text-soft">Close overlay</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-white border border-panel-border text-[10px] font-mono">Esc</kbd>
+          </div>
+          <div class="flex items-center justify-between p-2 rounded-md bg-bg">
+            <span class="text-text-soft">Search</span>
+            <span class="text-text-muted">Topbar search bar</span>
+          </div>
+          <div class="flex items-center justify-between p-2 rounded-md bg-bg">
+            <span class="text-text-soft">Switch project</span>
+            <span class="text-text-muted">Topbar dropdown</span>
+          </div>
+        </div>
+      </div>
+
+      <%# Data Flow %>
+      <div>
+        <h3 class="text-[13px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-3">How It Works</h3>
+        <div class="p-3 rounded-lg bg-bg border border-panel-border font-mono text-[11px] text-text-soft leading-relaxed">
+          <p class="m-0">Claude Code session starts</p>
+          <p class="m-0 text-text-muted">&nbsp;&nbsp;&darr; HTTP hooks fire</p>
+          <p class="m-0">Events captured &rarr; routed to Workstream by branch</p>
+          <p class="m-0 text-text-muted">&nbsp;&nbsp;&darr; session ends</p>
+          <p class="m-0">Passport generated &rarr; risk scored &rarr; version snapshot</p>
+          <p class="m-0 text-text-muted">&nbsp;&nbsp;&darr; optionally</p>
+          <p class="m-0">AI Council reviews &rarr; findings + score &rarr; merge recommendation</p>
+          <p class="m-0 text-text-muted">&nbsp;&nbsp;&darr; on branch merge</p>
+          <p class="m-0">Docs &amp; decisions promote to Project Knowledge</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

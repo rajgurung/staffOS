@@ -19,7 +19,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="font-sans text-text-primary antialiased">
+  <body class="font-sans text-text-primary antialiased" data-controller="help">
     <div class="grid grid-cols-[260px_1fr] min-h-screen max-lg:grid-cols-1">
       <%= render "shared/sidebar" %>
 
@@ -42,5 +42,7 @@
         </section>
       </main>
     </div>
+
+    <%= render "shared/help_overlay" %>
   </body>
 </html>
