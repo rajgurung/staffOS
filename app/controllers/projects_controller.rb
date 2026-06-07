@@ -50,6 +50,10 @@ class ProjectsController < ApplicationController
   end
 
   def project_params
-    params.require(:project).permit(:name, :repo_name, :tech_stack, risk_rules: {}, documentation_preferences: {})
+    permitted = params.require(:project).permit(:name, :repo_name, :tech_stack)
+    if params[:project][:risk_rules].present?
+      permitted[:risk_rules] = params[:project][:risk_rules].to_unsafe_h
+    end
+    permitted
   end
 end

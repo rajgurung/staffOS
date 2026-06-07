@@ -1,0 +1,309 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "net/http"
+require "json"
+require "uri"
+require "yaml"
+require "fileutils"
+
+class StaffOSCLI
+  CONFIG_FILE = ".staffos.yml"
+  CREDENTIALS_FILE = File.expand_path("~/.staffos/credentials.yml")
+  VERSION = "0.1.0"
+
+  def initialize(args)
+    @args = args
+    @command = args.first
+  end
+
+  def run
+    case @command
+    when "login"    then login
+    when "init"     then init_project
+    when "status"   then status
+    when "passport" then passport
+    when "hook"     then generate_hook
+    when "version"  then puts "staffos #{VERSION}"
+    when "help", nil then help
+    else
+      puts "Unknown command: #{@command}"
+      help
+      exit 1
+    end
+  end
+
+  private
+
+  # ── Commands ──
+
+  def login
+    print "StaffOS API endpoint [http://localhost:9090]: "
+    endpoint = $stdin.gets.chomp
+    endpoint = "http://localhost:9090" if endpoint.empty?
+
+    print "API token: "
+    token = $stdin.gets.chomp
+
+    if token.empty?
+      puts "Error: API token is required."
+      exit 1
+    end
+
+    # Verify connection
+    uri = URI("#{endpoint}/up")
+    begin
+      res = Net::HTTP.get_response(uri)
+      if res.code == "200"
+        save_credentials(endpoint: endpoint, token: token)
+        puts "Logged in to #{endpoint}"
+      else
+        puts "Connection failed (HTTP #{res.code})."
+        exit 1
+      end
+    rescue => e
+      puts "Connection failed: #{e.message}"
+      exit 1
+    end
+  end
+
+  def init_project
+    if File.exist?(CONFIG_FILE)
+      puts "Project already initialized (#{CONFIG_FILE} exists)."
+      config = YAML.load_file(CONFIG_FILE)
+      puts "  Project: #{config['project_name']}"
+      puts "  Endpoint: #{config['api_endpoint']}"
+      return
+    end
+
+    creds = load_credentials
+    unless creds
+      puts "Not logged in. Run 'staffos login' first."
+      exit 1
+    end
+
+    project_name = detect_project_name
+    repo_name = detect_repo_name
+
+    print "Project name [#{project_name}]: "
+    input = $stdin.gets.chomp
+    project_name = input unless input.empty?
+
+    config = {
+      "project_name" => project_name,
+      "repo_name" => repo_name,
+      "api_endpoint" => creds["endpoint"],
+      "privacy" => {
+        "upload_source" => false,
+        "upload_diffs" => "metadata_only",
+        "redact_secrets" => true
+      }
+    }
+
+    File.write(CONFIG_FILE, config.to_yaml)
+    puts "Created #{CONFIG_FILE}"
+
+    generate_hook
+    puts "\nProject initialized. Start Claude Code and events will be captured."
+  end
+
+  def status
+    config = load_config
+    creds = load_credentials
+
+    puts "StaffOS Status"
+    puts "─" * 40
+    puts "Version:     #{VERSION}"
+    puts "Project:     #{config ? config['project_name'] : 'Not initialized'}"
+    puts "Repo:        #{config ? config['repo_name'] : 'N/A'}"
+    puts "Branch:      #{current_branch}"
+    puts "Endpoint:    #{creds ? creds['endpoint'] : 'Not logged in'}"
+    puts "Config:      #{File.exist?(CONFIG_FILE) ? CONFIG_FILE : 'Not found'}"
+    puts "Credentials: #{File.exist?(CREDENTIALS_FILE) ? 'Saved' : 'Not found'}"
+
+    hooks_file = ".claude/settings.json"
+    if File.exist?(hooks_file)
+      settings = JSON.parse(File.read(hooks_file)) rescue {}
+      hook_count = (settings["hooks"] || {}).keys.length
+      puts "Hooks:       #{hook_count > 0 ? "#{hook_count} events configured" : 'Not configured'}"
+    else
+      puts "Hooks:       Not configured"
+    end
+
+    if creds
+      print "\nConnection:  Testing... "
+      uri = URI("#{creds['endpoint']}/up")
+      begin
+        res = Net::HTTP.get_response(uri)
+        puts res.code == "200" ? "OK" : "Failed (#{res.code})"
+      rescue => e
+        puts "Failed (#{e.message})"
+      end
+    end
+  end
+
+  def passport
+    creds = load_credentials
+    config = load_config
+    unless creds && config
+      puts "Not initialized. Run 'staffos login' and 'staffos init'."
+      exit 1
+    end
+
+    branch = current_branch
+    puts "Fetching passport for branch: #{branch}"
+    puts "─" * 40
+    puts "Project:  #{config['project_name']}"
+    puts "Branch:   #{branch}"
+    puts "Endpoint: #{creds['endpoint']}"
+    puts "\nView in browser: #{creds['endpoint']}/workstreams"
+  end
+
+  def generate_hook
+    creds = load_credentials
+    config = load_config
+
+    endpoint = creds&.dig("endpoint") || "http://localhost:9090"
+    token = creds&.dig("token")
+    project_name = config&.dig("project_name") || "Default"
+
+    # Claude Code uses HTTP hooks - it POSTs the full event context
+    # (session_id, tool_name, tool_input, prompt, etc.) as JSON body automatically
+    headers = { "X-StaffOS-Project" => project_name }
+    headers["Authorization"] = "Bearer #{token}" if token
+
+    hook_config = {
+      "hooks" => {
+        "SessionStart" => [{
+          "hooks" => [{
+            "type" => "http",
+            "url" => "#{endpoint}/api/v1/hooks/session_start",
+            "headers" => headers,
+            "timeout" => 10
+          }]
+        }],
+        "UserPromptSubmit" => [{
+          "hooks" => [{
+            "type" => "http",
+            "url" => "#{endpoint}/api/v1/hooks/prompt",
+            "headers" => headers,
+            "timeout" => 10
+          }]
+        }],
+        "PreToolUse" => [{
+          "matcher" => "Bash|Edit|Write|Read",
+          "hooks" => [{
+            "type" => "http",
+            "url" => "#{endpoint}/api/v1/hooks/pre_tool",
+            "headers" => headers,
+            "timeout" => 10
+          }]
+        }],
+        "PostToolUse" => [{
+          "matcher" => "Bash|Edit|Write|Read",
+          "hooks" => [{
+            "type" => "http",
+            "url" => "#{endpoint}/api/v1/hooks/post_tool",
+            "headers" => headers,
+            "timeout" => 10
+          }]
+        }],
+        "Stop" => [{
+          "hooks" => [{
+            "type" => "http",
+            "url" => "#{endpoint}/api/v1/hooks/stop",
+            "headers" => headers,
+            "timeout" => 30
+          }]
+        }]
+      }
+    }
+
+    puts "\nClaude Code Hook Configuration (HTTP hooks)"
+    puts "─" * 40
+    puts "Claude Code will POST full event context as JSON automatically."
+    puts "No environment variable interpolation needed.\n\n"
+
+    json_output = JSON.pretty_generate(hook_config)
+    puts json_output
+
+    # Write to .claude/settings.json
+    claude_dir = ".claude"
+    settings_file = "#{claude_dir}/settings.json"
+    FileUtils.mkdir_p(claude_dir)
+
+    existing = File.exist?(settings_file) ? (JSON.parse(File.read(settings_file)) rescue {}) : {}
+    existing["hooks"] = hook_config["hooks"]
+    File.write(settings_file, JSON.pretty_generate(existing))
+    puts "\nHook config written to #{settings_file}"
+  end
+
+  def help
+    puts <<~HELP
+      StaffOS CLI v#{VERSION}
+      Trust, review, and remember AI-assisted engineering work.
+
+      Usage: staffos <command>
+
+      Commands:
+        login      Connect to a StaffOS instance
+        init       Initialize project in current directory
+        status     Show connection and project status
+        passport   Show latest passport for current branch
+        hook       Generate and install Claude Code hooks
+        version    Show CLI version
+        help       Show this help
+
+      Getting started:
+        1. staffos login      (enter your API endpoint and token)
+        2. staffos init       (creates .staffos.yml and installs hooks)
+        3. Use Claude Code normally - events are captured via HTTP hooks
+        4. Visit StaffOS dashboard to see workstreams and passports
+
+      How it works:
+        StaffOS uses Claude Code's HTTP hooks to capture lifecycle events.
+        When Claude Code starts a session, submits a prompt, uses a tool,
+        or stops - it POSTs the full event context to StaffOS automatically.
+        No curl commands or environment variable interpolation needed.
+
+    HELP
+  end
+
+  # ── Helpers ──
+
+  def save_credentials(endpoint:, token:)
+    dir = File.dirname(CREDENTIALS_FILE)
+    FileUtils.mkdir_p(dir)
+    File.write(CREDENTIALS_FILE, { "endpoint" => endpoint, "token" => token }.to_yaml)
+    File.chmod(0600, CREDENTIALS_FILE)
+  end
+
+  def load_credentials
+    return nil unless File.exist?(CREDENTIALS_FILE)
+    YAML.load_file(CREDENTIALS_FILE)
+  end
+
+  def load_config
+    return nil unless File.exist?(CONFIG_FILE)
+    YAML.load_file(CONFIG_FILE)
+  end
+
+  def current_branch
+    `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip.then { |b| b.empty? ? "unknown" : b }
+  end
+
+  def detect_project_name
+    File.basename(Dir.pwd).gsub(/[-_]/, " ").gsub(/\b\w/, &:upcase)
+  end
+
+  def detect_repo_name
+    remote = `git remote get-url origin 2>/dev/null`.strip
+    if remote.match?(%r{[:/]([^/]+/[^/]+?)(?:\.git)?$})
+      remote.match(%r{[:/]([^/]+/[^/]+?)(?:\.git)?$})[1]
+    else
+      "local/#{File.basename(Dir.pwd)}"
+    end
+  end
+end
+
+StaffOSCLI.new(ARGV).run

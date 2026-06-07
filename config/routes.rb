@@ -10,6 +10,8 @@ Rails.application.routes.draw do
   get "dashboard", to: "dashboard#index", as: :dashboard
   post "switch_project", to: "application#switch_project", as: :switch_project
   get "risk_cockpit", to: "risk_cockpit#index", as: :risk_cockpit
+  get "settings", to: "settings#index", as: :settings
+  patch "settings/profile", to: "settings#update_profile", as: :update_profile_settings
 
   resources :workstreams, only: [:index, :show, :edit, :update] do
     member do
@@ -41,6 +43,13 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :events, only: [:create]
       post "sessions/:session_id/complete", to: "sessions#complete"
+
+      # Claude Code HTTP hook endpoints
+      post "hooks/session_start", to: "hooks#session_start"
+      post "hooks/prompt", to: "hooks#prompt"
+      post "hooks/pre_tool", to: "hooks#pre_tool"
+      post "hooks/post_tool", to: "hooks#post_tool"
+      post "hooks/stop", to: "hooks#stop"
     end
   end
 end

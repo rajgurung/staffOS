@@ -9,7 +9,7 @@
 </div>
 
 <%# Stats Row %>
-<div class="grid grid-cols-5 gap-3 mb-5 max-xl:grid-cols-3 max-lg:grid-cols-2">
+<div class="grid grid-cols-6 gap-3 mb-5 max-xl:grid-cols-3 max-lg:grid-cols-2">
   <%= card(title: "Total Runs", classes: "card-accent-blue") do %>
     <p class="text-[28px] font-[850] tracking-[-0.05em] text-blue m-0"><%= @total_runs %></p>
     <p class="text-text-muted text-[12px] mt-1 m-0">sessions captured</p>
@@ -44,6 +44,11 @@
       <span><span class="inline-block w-1.5 h-1.5 rounded-full bg-warning mr-1"></span><%= @medium_risk %> Med</span>
       <span><span class="inline-block w-1.5 h-1.5 rounded-full bg-success mr-1"></span><%= @low_risk %> Low</span>
     </div>
+  <% end %>
+
+  <%= card(title: "AI Usage", classes: "card-accent-cyan") do %>
+    <p class="text-[28px] font-[850] tracking-[-0.05em] text-cyan m-0"><%= number_with_delimiter(@total_tokens) %></p>
+    <p class="text-text-muted text-[12px] mt-1 m-0">tokens &middot; ~$<%= @estimated_cost %></p>
   <% end %>
 </div>
 

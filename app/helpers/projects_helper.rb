@@ -1,18 +1,43 @@
 module ProjectsHelper
   def hook_config_json(project)
+    token = project.api_tokens.first&.token
+    headers = { "X-StaffOS-Project" => project.name }
+    headers["Authorization"] = "Bearer #{token}" if token
+
     config = {
       hooks: {
         SessionStart: [{
-          type: "command",
-          command: "curl -s -X POST http://localhost:9090/api/v1/events -H 'Content-Type: application/json' -d '{\"session_id\": \"$CLAUDE_SESSION_ID\", \"event_type\": \"session_started\", \"project_name\": \"#{project.name}\", \"provider\": \"claude_code\"}'"
+          hooks: [{
+            type: "http",
+            url: "http://localhost:9090/api/v1/hooks/session_start",
+            headers: headers,
+            timeout: 10
+          }]
         }],
         UserPromptSubmit: [{
-          type: "command",
-          command: "curl -s -X POST http://localhost:9090/api/v1/events -H 'Content-Type: application/json' -d '{\"session_id\": \"$CLAUDE_SESSION_ID\", \"event_type\": \"prompt_submitted\", \"payload\": {\"prompt\": \"$CLAUDE_USER_PROMPT\"}}'"
+          hooks: [{
+            type: "http",
+            url: "http://localhost:9090/api/v1/hooks/prompt",
+            headers: headers,
+            timeout: 10
+          }]
+        }],
+        PostToolUse: [{
+          matcher: "Bash|Edit|Write|Read",
+          hooks: [{
+            type: "http",
+            url: "http://localhost:9090/api/v1/hooks/post_tool",
+            headers: headers,
+            timeout: 10
+          }]
         }],
         Stop: [{
-          type: "command",
-          command: "curl -s -X POST http://localhost:9090/api/v1/events -H 'Content-Type: application/json' -d '{\"session_id\": \"$CLAUDE_SESSION_ID\", \"event_type\": \"session_completed\"}'"
+          hooks: [{
+            type: "http",
+            url: "http://localhost:9090/api/v1/hooks/stop",
+            headers: headers,
+            timeout: 30
+          }]
         }]
       }
     }

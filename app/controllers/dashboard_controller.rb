@@ -17,6 +17,9 @@ class DashboardController < ApplicationController
     @low_risk = passports.where(risk_level: "Low").count
     @avg_readiness = passports.average(:readiness_score)&.round(0) || 0
 
+    @total_tokens = sessions.sum { |s| s.metadata&.dig("tokens_used").to_i }
+    @estimated_cost = (@total_tokens / 1_000_000.0 * 3.0).round(2) # rough estimate at $3/MTok
+
     @active_workstreams = current_project.workstreams.active.recent.limit(5)
     @recent_documents = current_project.documents.order(created_at: :desc).limit(3)
     @recent_decisions = current_project.decision_logs.order(created_at: :desc).limit(3)

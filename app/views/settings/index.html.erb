@@ -1,0 +1,111 @@
+<div class="mb-6">
+  <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">Settings</h1>
+  <p class="text-text-muted text-[13px]">Account, integrations, and system overview.</p>
+</div>
+
+<div class="grid grid-cols-2 gap-4 mb-4 max-xl:grid-cols-1">
+  <%# Profile %>
+  <%= card(title: "Profile") do %>
+    <%= form_tag update_profile_settings_path, method: :patch, class: "space-y-4" do %>
+      <div>
+        <label class="block text-text-soft text-[12px] font-medium mb-1">Name</label>
+        <input name="user[name]" value="<%= @user.name %>" class="w-full h-9 px-3 border border-panel-border rounded-md bg-bg text-[13px] text-text-primary outline-none" />
+      </div>
+      <div>
+        <label class="block text-text-soft text-[12px] font-medium mb-1">Email</label>
+        <input name="user[email]" value="<%= @user.email %>" class="w-full h-9 px-3 border border-panel-border rounded-md bg-bg text-[13px] text-text-primary outline-none" />
+      </div>
+      <button type="submit" class="h-8 px-4 rounded-md btn-primary text-[12px] font-semibold border-0 cursor-pointer">Save</button>
+    <% end %>
+  <% end %>
+
+  <%# Integration Status %>
+  <%= card(title: "Integrations") do %>
+    <div class="space-y-3">
+      <div class="flex items-center justify-between p-3 rounded-md bg-bg border border-panel-border">
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-md bg-purple-soft text-purple grid place-items-center text-[11px] font-bold">CC</span>
+          <div>
+            <p class="text-[13px] font-semibold text-text-primary m-0">Claude Code</p>
+            <p class="text-[11px] text-text-muted m-0">HTTP hooks via API</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-success"></span>
+          <span class="text-success text-[11px] font-semibold">Connected</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between p-3 rounded-md bg-bg border border-panel-border">
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-md bg-blue-soft text-blue grid place-items-center text-[11px] font-bold">GH</span>
+          <div>
+            <p class="text-[13px] font-semibold text-text-primary m-0">GitHub</p>
+            <p class="text-[11px] text-text-muted m-0">PR comments, status checks</p>
+          </div>
+        </div>
+        <span class="text-text-muted text-[11px] font-semibold">Coming soon</span>
+      </div>
+
+      <div class="flex items-center justify-between p-3 rounded-md bg-bg border border-panel-border">
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-md bg-cyan-soft text-cyan grid place-items-center text-[11px] font-bold">LN</span>
+          <div>
+            <p class="text-[13px] font-semibold text-text-primary m-0">Linear</p>
+            <p class="text-[11px] text-text-muted m-0">Ticket linking</p>
+          </div>
+        </div>
+        <span class="text-text-muted text-[11px] font-semibold">Coming soon</span>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<div class="grid grid-cols-3 gap-4 mb-4 max-xl:grid-cols-1">
+  <%# System Stats %>
+  <%= card(title: "System Overview", classes: "card-accent-primary") do %>
+    <div class="space-y-2.5 text-[13px]">
+      <div class="flex justify-between"><span class="text-text-muted">Total Projects</span><span class="font-semibold"><%= @projects.count %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Total Sessions</span><span class="font-semibold"><%= @total_sessions %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Total Events</span><span class="font-semibold"><%= number_with_delimiter(@total_events) %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Total Tokens</span><span class="font-semibold"><%= number_with_delimiter(@total_tokens) %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Workstreams</span><span class="font-semibold"><%= Workstream.count %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Passports</span><span class="font-semibold"><%= RunPassport.count %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Documents</span><span class="font-semibold"><%= Document.count %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Decisions</span><span class="font-semibold"><%= DecisionLog.count %></span></div>
+    </div>
+  <% end %>
+
+  <%# CLI Setup %>
+  <%= card(title: "CLI Setup") do %>
+    <p class="text-text-soft text-[13px] mb-3 m-0">Install the StaffOS CLI to connect your projects:</p>
+    <div class="p-3 rounded-md bg-bg border border-panel-border font-mono text-[11px] text-text-soft space-y-1">
+      <p class="m-0 text-text-muted"># Add to your PATH</p>
+      <p class="m-0">export PATH="$PATH:/path/to/staffos/cli"</p>
+      <p class="m-0 text-text-muted mt-2"># Login and initialize</p>
+      <p class="m-0">staffos login</p>
+      <p class="m-0">staffos init</p>
+      <p class="m-0 text-text-muted mt-2"># Check status</p>
+      <p class="m-0">staffos status</p>
+    </div>
+  <% end %>
+
+  <%# API Info %>
+  <%= card(title: "API Endpoints") do %>
+    <div class="space-y-2 text-[12px]">
+      <% [
+        ["POST", "/api/v1/hooks/session_start", "Session started"],
+        ["POST", "/api/v1/hooks/prompt", "Prompt submitted"],
+        ["POST", "/api/v1/hooks/post_tool", "Tool completed"],
+        ["POST", "/api/v1/hooks/stop", "Session stopped"],
+        ["POST", "/api/v1/events", "Generic event"],
+      ].each do |method, path, desc| %>
+        <div class="flex items-center gap-2 py-1.5 border-b border-panel-border last:border-0">
+          <span class="w-10 text-[10px] font-bold text-success shrink-0"><%= method %></span>
+          <code class="text-primary text-[10px] flex-1"><%= path %></code>
+          <span class="text-text-muted text-[10px] shrink-0"><%= desc %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
