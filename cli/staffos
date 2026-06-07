@@ -19,13 +19,14 @@ class StaffOSCLI
 
   def run
     case @command
-    when "login"    then login
-    when "init"     then init_project
-    when "status"   then status
-    when "passport" then passport
-    when "hook"     then generate_hook
-    when "version"  then puts "staffos #{VERSION}"
-    when "help", nil then help
+    when "login"      then login
+    when "init"       then init_project
+    when "status"     then status
+    when "passport"   then passport
+    when "disconnect" then disconnect
+    when "hook"       then generate_hook
+    when "version"    then puts "staffos #{VERSION}"
+    when "help", nil  then help
     else
       puts "Unknown command: #{@command}"
       help
@@ -159,6 +160,37 @@ class StaffOSCLI
     puts "\nView in browser: #{creds['endpoint']}/workstreams"
   end
 
+  def disconnect
+    removed = []
+
+    if File.exist?(CREDENTIALS_FILE)
+      File.delete(CREDENTIALS_FILE)
+      removed << "credentials (#{CREDENTIALS_FILE})"
+    end
+
+    # Strip StaffOS hooks from .claude/settings.json, leaving other settings intact.
+    settings_file = ".claude/settings.json"
+    if File.exist?(settings_file)
+      settings = JSON.parse(File.read(settings_file)) rescue {}
+      if settings.delete("hooks")
+        if settings.empty?
+          File.delete(settings_file)
+        else
+          File.write(settings_file, JSON.pretty_generate(settings))
+        end
+        removed << "Claude Code hooks (#{settings_file})"
+      end
+    end
+
+    if removed.empty?
+      puts "Nothing to disconnect — no StaffOS credentials or hooks found."
+    else
+      puts "Disconnected from StaffOS. Removed:"
+      removed.each { |item| puts "  - #{item}" }
+      puts "\nYour project config (#{CONFIG_FILE}) was left in place. Delete it manually to fully reset."
+    end
+  end
+
   def generate_hook
     creds = load_credentials
     config = load_config
@@ -250,6 +282,7 @@ class StaffOSCLI
         init       Initialize project in current directory
         status     Show connection and project status
         passport   Show latest passport for current branch
+        disconnect Remove stored credentials and Claude Code hooks
         hook       Generate and install Claude Code hooks
         version    Show CLI version
         help       Show this help

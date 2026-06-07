@@ -7,6 +7,13 @@
     </div>
     <div class="flex items-center gap-3">
       <% if @council_reviews.any? %>
+        <% council_cost = @council_reviews.completed.sum(&:cost_cents) %>
+        <% if council_cost > 0 %>
+          <span class="inline-flex items-center h-[22px] px-2 rounded-md text-[11px] font-semibold bg-bg border border-panel-border text-text-muted"
+                title="AI reviewer token cost">
+            $<%= format('%.2f', council_cost / 100.0) %>
+          </span>
+        <% end %>
         <span class="inline-flex items-center h-[22px] px-2 rounded-md text-[11px] font-semibold pill-ready">
           <%= @passport.council_progress %>% complete
         </span>
@@ -139,7 +146,15 @@
                 </div>
                 <div>
                   <p class="text-[13px] font-semibold text-text-primary m-0"><%= review.label %></p>
-                  <p class="text-text-muted text-[10px] m-0"><%= review.completed_at&.strftime("%H:%M") %></p>
+                  <p class="text-text-muted text-[10px] m-0">
+                    <%= review.completed_at&.strftime("%H:%M") %>
+                    &middot;
+                    <% if review.source == "llm" %>
+                      <span title="<%= review.model %>"><%= review.model %></span>
+                    <% else %>
+                      <span title="Deterministic StaffOS heuristics">Heuristic</span>
+                    <% end %>
+                  </p>
                 </div>
               </div>
               <span class="text-[20px] font-[800] tracking-[-0.04em] <%= review.score >= 7 ? 'text-success' : review.score >= 5 ? 'text-warning' : 'text-danger' %>">

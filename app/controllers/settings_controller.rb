@@ -2,7 +2,9 @@ class SettingsController < ApplicationController
   def index
     @user = current_user
     @projects = Project.all
-    @total_tokens = AgentSession.all.sum { |s| s.metadata&.dig("tokens_used").to_i }
+    llm_tokens = RunPassport.sum(:input_tokens) + RunPassport.sum(:output_tokens)
+    agent_tokens = AgentSession.all.sum { |s| s.metadata&.dig("tokens_used").to_i }
+    @total_tokens = llm_tokens + agent_tokens
     @total_sessions = AgentSession.count
     @total_events = RunEvent.count
   end

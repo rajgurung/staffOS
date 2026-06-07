@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_07_195921) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_07_215047) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -43,13 +43,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_07_195921) do
 
   create_table "council_reviews", force: :cascade do |t|
     t.datetime "completed_at"
+    t.integer "cost_cents", default: 0, null: false
     t.datetime "created_at", null: false
     t.jsonb "findings"
+    t.integer "input_tokens", default: 0, null: false
+    t.string "model"
+    t.integer "output_tokens", default: 0, null: false
     t.string "persona"
     t.text "recommendation"
     t.text "risk_assessment"
     t.bigint "run_passport_id", null: false
     t.float "score"
+    t.string "source", default: "heuristic", null: false
     t.string "status"
     t.datetime "updated_at", null: false
     t.bigint "workstream_id"
@@ -146,18 +151,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_07_195921) do
 
   create_table "run_passports", force: :cascade do |t|
     t.bigint "agent_session_id", null: false
+    t.integer "cost_cents", default: 0, null: false
     t.datetime "created_at", null: false
     t.integer "current_version", default: 0
     t.jsonb "files_touched"
     t.boolean "human_review_required"
+    t.integer "input_tokens", default: 0, null: false
     t.text "intent"
     t.datetime "last_assessed_at"
     t.jsonb "missing_checks"
+    t.integer "output_tokens", default: 0, null: false
     t.integer "readiness_score"
     t.jsonb "recommended_actions"
     t.string "review_mode"
     t.string "risk_level"
     t.text "summary"
+    t.string "summary_source", default: "heuristic", null: false
     t.jsonb "test_summary"
     t.datetime "updated_at", null: false
     t.bigint "workstream_id"

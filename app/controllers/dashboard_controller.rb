@@ -17,8 +17,12 @@ class DashboardController < ApplicationController
     @low_risk = passports.where(risk_level: "Low").count
     @avg_readiness = passports.average(:readiness_score)&.round(0) || 0
 
-    @total_tokens = sessions.sum { |s| s.metadata&.dig("tokens_used").to_i }
-    @estimated_cost = (@total_tokens / 1_000_000.0 * 3.0).round(2) # rough estimate at $3/MTok
+    # Real LLM spend captured from smart summaries and council reviews, plus any
+    # token counts reported by the agent itself via session metadata.
+    llm_tokens = passports.sum(:input_tokens) + passports.sum(:output_tokens)
+    agent_tokens = sessions.sum { |s| s.metadata&.dig("tokens_used").to_i }
+    @total_tokens = llm_tokens + agent_tokens
+    @estimated_cost = (passports.sum(:cost_cents) / 100.0).round(2)
 
     @active_workstreams = current_project.workstreams.active.recent.limit(5)
     @recent_documents = current_project.documents.order(created_at: :desc).limit(3)

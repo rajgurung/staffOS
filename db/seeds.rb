@@ -69,6 +69,31 @@ def seed_workstream(project:, branch_name:, title:, description:, status:, merge
     passport.create_version!(trigger: "council_completed")
   end
 
+  # Without an API key the council/summary run on heuristics (cost 0). For a
+  # representative demo, stamp realistic LLM usage on the AI-backed passports so
+  # the dashboard's "AI usage and cost" panel reflects real spend.
+  seed_cost = ->(model, input, output) do
+    rates = LlmClient::PRICING[model]
+    (((input / 1_000_000.0 * rates[:input]) + (output / 1_000_000.0 * rates[:output])) * 100).round
+  end
+
+  if review_mode == "full_council"
+    model = LlmClient::COUNCIL_MODEL
+    passport.council_reviews.completed.find_each do |r|
+      input, output = rand(2400..3600), rand(300..700)
+      r.update!(source: "llm", model: model, input_tokens: input,
+                output_tokens: output, cost_cents: seed_cost.call(model, input, output))
+    end
+    totals = passport.council_reviews.completed
+    passport.update!(input_tokens: totals.sum(:input_tokens), output_tokens: totals.sum(:output_tokens),
+                     cost_cents: totals.sum(:cost_cents))
+  elsif review_mode == "smart_summary"
+    model = LlmClient::SUMMARY_MODEL
+    input, output = rand(1200..2000), rand(200..400)
+    passport.update!(summary_source: "llm", input_tokens: input, output_tokens: output,
+                     cost_cents: seed_cost.call(model, input, output))
+  end
+
   { workstream: ws, session: session, passport: passport }
 end
 

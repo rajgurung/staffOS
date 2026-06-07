@@ -33,7 +33,98 @@ class PassportGenerator
     passport
   end
 
+  # Smart-summary mode (SPEC §16): use a cheaper model to summarise the session
+  # and extract risks. Risk *level* stays deterministic (SPEC §15) — the LLM
+  # enriches the narrative summary, intent, and missing checks only. Returns
+  # true when the LLM was actually used, false when it fell back to heuristics.
+  def apply_smart_summary!(passport)
+    client = LlmClient.new(model: LlmClient::SUMMARY_MODEL)
+    return false unless client.enabled?
+
+    result = client.complete(
+      system: smart_summary_system,
+      prompt: smart_summary_prompt(passport),
+      max_tokens: 1500,
+      schema: smart_summary_schema
+    )
+    data = result&.text
+    return false unless data.is_a?(Hash)
+
+    merged_checks = (passport.missing_checks || []) + Array(data["additional_checks"])
+    passport.update!(
+      intent: data["intent"].presence || passport.intent,
+      summary: data["summary"].presence || passport.summary,
+      missing_checks: merged_checks.uniq { |c| c["check"] },
+      summary_source: "llm",
+      input_tokens: passport.input_tokens + result.input_tokens,
+      output_tokens: passport.output_tokens + result.output_tokens,
+      cost_cents: passport.cost_cents + result.cost_cents
+    )
+    true
+  end
+
   private
+
+  def smart_summary_system
+    <<~SYS
+      You are StaffOS, a reviewer that turns AI-assisted coding sessions into a
+      verified engineering record. You receive only metadata about a session —
+      file paths, change sizes, categories, test results, and risk signals. You
+      never see source code. Be precise, concrete, and concise. Write for a
+      senior engineer reviewing the change before merge.
+    SYS
+  end
+
+  def smart_summary_prompt(passport)
+    <<~PROMPT
+      Summarise this AI-assisted coding session and extract review gaps.
+
+      Stated intent (raw prompt): #{passport.intent}
+      Branch: #{passport.agent_session.branch_name}
+      Deterministic risk level (do not contradict): #{passport.risk_level}
+
+      Files touched:
+      #{files_for_prompt(passport)}
+
+      Test evidence: #{passport.test_summary.presence || 'none captured'}
+
+      Existing deterministic missing checks:
+      #{(passport.missing_checks || []).map { |c| "- #{c['check']}" }.join("\n").presence || '- none'}
+
+      Return a tight 1-3 sentence intent, a 2-4 sentence summary of what changed
+      and why it matters, and any ADDITIONAL review gaps not already listed.
+    PROMPT
+  end
+
+  def smart_summary_schema
+    {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        intent: { type: "string" },
+        summary: { type: "string" },
+        additional_checks: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              check: { type: "string" },
+              severity: { type: "string", enum: %w[low medium high] }
+            },
+            required: %w[check severity]
+          }
+        }
+      },
+      required: %w[intent summary additional_checks]
+    }
+  end
+
+  def files_for_prompt(passport)
+    files = passport.files_touched || []
+    return "- none" if files.empty?
+    files.map { |f| "- #{f['path']} (#{f['category']}, +#{f['additions']}/-#{f['deletions']})" }.join("\n")
+  end
 
   def extract_intent
     prompt_event = @events.find_by(event_type: "prompt_submitted")

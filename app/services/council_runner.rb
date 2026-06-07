@@ -1,27 +1,22 @@
 class CouncilRunner
   REVIEW_ORDER = %w[staff_engineer sre security product_manager devils_advocate writing_coach].freeze
 
+  # What each persona is asked to focus on when reviewing via the LLM.
+  PERSONA_FOCUS = {
+    "staff_engineer"  => "architecture, separation of concerns, test coverage, complexity, and resilience patterns",
+    "sre"             => "operability: configuration changes, observability, rollout safety, and database migrations",
+    "security"        => "auth/permission surfaces, payment/billing code, dependency changes, and API authorization",
+    "product_manager" => "alignment with stated intent, user impact, and API contract/backward compatibility",
+    "devils_advocate" => "hidden failure modes, unverified assumptions, edge cases, resource exhaustion, and rollback safety",
+    "writing_coach"   => "clarity of intent, documentation gaps (ADRs/decision logs), and PR-readiness of the record"
+  }.freeze
+
   def initialize(passport)
     @passport = passport
   end
 
   def run!
-    REVIEW_ORDER.each do |persona|
-      review = @passport.council_reviews.find_or_initialize_by(persona: persona)
-      review.update!(status: "running")
-
-      result = generate_review(persona)
-
-      review.update!(
-        status: "completed",
-        findings: result[:findings],
-        recommendation: result[:recommendation],
-        risk_assessment: result[:risk_assessment],
-        score: result[:score],
-        completed_at: Time.current
-      )
-    end
-
+    REVIEW_ORDER.each { |persona| run_persona!(persona) }
     @passport.council_reviews.ordered
   end
 
@@ -37,16 +32,124 @@ class CouncilRunner
       recommendation: result[:recommendation],
       risk_assessment: result[:risk_assessment],
       score: result[:score],
+      model: result[:model],
+      source: result[:source],
+      input_tokens: result[:input_tokens].to_i,
+      output_tokens: result[:output_tokens].to_i,
+      cost_cents: result[:cost_cents].to_i,
       completed_at: Time.current
     )
 
+    roll_up_usage!(review)
     review
   end
 
   private
 
+  # Try the LLM first; fall back to the deterministic heuristic on any failure
+  # or when no API key is configured. The heuristic keeps full council output
+  # working in development, CI, and seeding without external calls.
   def generate_review(persona)
-    send(:"review_as_#{persona}")
+    llm_review(persona) || send(:"review_as_#{persona}").merge(source: "heuristic")
+  end
+
+  def llm_review(persona)
+    client = LlmClient.new(model: LlmClient::COUNCIL_MODEL)
+    return nil unless client.enabled?
+
+    result = client.complete(
+      system: council_system(persona),
+      prompt: council_prompt,
+      max_tokens: 1500,
+      schema: council_schema
+    )
+    data = result&.text
+    return nil unless data.is_a?(Hash)
+
+    {
+      findings: Array(data["findings"]),
+      recommendation: data["recommendation"].to_s,
+      risk_assessment: data["risk_assessment"].to_s,
+      score: data["score"].to_f.clamp(1.0, 10.0),
+      model: result.model,
+      source: "llm",
+      input_tokens: result.input_tokens,
+      output_tokens: result.output_tokens,
+      cost_cents: result.cost_cents
+    }
+  end
+
+  def roll_up_usage!(review)
+    return unless review.source == "llm"
+    @passport.update!(
+      input_tokens: @passport.input_tokens + review.input_tokens,
+      output_tokens: @passport.output_tokens + review.output_tokens,
+      cost_cents: @passport.cost_cents + review.cost_cents
+    )
+  end
+
+  def council_system(persona)
+    label = CouncilReview::PERSONAS.dig(persona, :label) || persona.titleize
+    <<~SYS
+      You are the #{label} on the StaffOS AI review council. You review an
+      AI-assisted coding change before merge, focusing on #{PERSONA_FOCUS[persona]}.
+      You receive only metadata — file paths, categories, change sizes, test
+      results, and risk signals — never source code. Be specific and actionable.
+      Score the change from 1.0 (block) to 10.0 (ship it) from your discipline's
+      perspective. Raise findings only where warranted; a clean change can have none.
+    SYS
+  end
+
+  def council_prompt
+    <<~PROMPT
+      Intent: #{@passport.intent}
+      Branch: #{@passport.agent_session.branch_name}
+      Deterministic risk level: #{@passport.risk_level}
+
+      Files touched:
+      #{files_for_prompt}
+
+      Test evidence: #{@passport.test_summary.presence || 'none captured'}
+
+      Existing missing checks:
+      #{(@passport.missing_checks || []).map { |c| "- #{c['check']} (#{c['severity']})" }.join("\n").presence || '- none'}
+
+      Review from your discipline. Return findings (each with type, severity, and
+      a concrete detail), a one-line recommendation, a short risk_assessment, and
+      a numeric score.
+    PROMPT
+  end
+
+  def council_schema
+    {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        findings: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              type: { type: "string" },
+              severity: { type: "string", enum: %w[positive low medium high critical] },
+              detail: { type: "string" }
+            },
+            required: %w[type severity detail]
+          }
+        },
+        recommendation: { type: "string" },
+        risk_assessment: { type: "string" },
+        score: { type: "number" }
+      },
+      required: %w[findings recommendation risk_assessment score]
+    }
+  end
+
+  def files_for_prompt
+    files = @passport.files_touched || []
+    return "- none" if files.empty?
+    files.map { |f| "- #{f['path']} (#{f['category']}, +#{f['additions']}/-#{f['deletions']})" }.join("\n")
   end
 
   def review_as_staff_engineer
