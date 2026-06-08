@@ -1,0 +1,97 @@
+<div class="max-w-2xl mx-auto">
+  <div class="text-center mb-8">
+    <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-primary to-purple grid place-items-center text-white text-xl font-bold shadow-primary">S</div>
+    <h1 class="text-[28px] font-[800] tracking-[-0.04em] mb-2">Connect a Project</h1>
+    <p class="text-text-soft text-[14px]">One command to capture every Claude Code session.</p>
+  </div>
+
+  <% if @project && @token %>
+    <%# Step 1: The one-liner %>
+    <div class="card card-accent-primary mb-4">
+      <div class="p-6">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="w-6 h-6 rounded-full bg-primary text-white grid place-items-center text-[11px] font-bold">1</span>
+          <h2 class="text-[15px] font-[700] m-0">Run this in your project directory</h2>
+        </div>
+        <div class="relative" data-controller="clipboard" data-clipboard-text-value="ruby <(curl -s <%= request.base_url %>/connect/script)">
+          <div class="p-4 rounded-lg bg-[#1e1e2e] font-mono text-[13px] text-[#cdd6f4] overflow-x-auto">
+            <span class="text-[#a6adc8]">$</span> ruby &lt;(curl -s <%= request.base_url %>/connect/script)
+          </div>
+          <button data-action="clipboard#copy" class="absolute top-3 right-3 h-7 px-2.5 rounded-md bg-white/10 text-white/70 text-[11px] font-semibold border-0 cursor-pointer hover:bg-white/20 transition-colors">Copy</button>
+        </div>
+        <p class="text-text-muted text-[12px] mt-3 m-0">This will configure credentials, create hooks, and connect Claude Code to StaffOS. Takes about 2 seconds.</p>
+      </div>
+    </div>
+
+    <%# Step 2: What happens %>
+    <div class="card mb-4">
+      <div class="p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-6 h-6 rounded-full bg-success text-white grid place-items-center text-[11px] font-bold">2</span>
+          <h2 class="text-[15px] font-[700] m-0">Use Claude Code normally</h2>
+        </div>
+        <div class="space-y-3">
+          <div class="flex items-start gap-3 p-3 rounded-lg bg-bg">
+            <span class="w-8 h-8 rounded-lg bg-primary-soft text-primary grid place-items-center text-[11px] font-bold shrink-0">1</span>
+            <div>
+              <p class="text-[13px] font-semibold text-text-primary m-0">Session starts</p>
+              <p class="text-[12px] text-text-muted m-0">StaffOS creates a workstream for your Git branch</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-3 rounded-lg bg-bg">
+            <span class="w-8 h-8 rounded-lg bg-blue-soft text-blue grid place-items-center text-[11px] font-bold shrink-0">2</span>
+            <div>
+              <p class="text-[13px] font-semibold text-text-primary m-0">You work</p>
+              <p class="text-[12px] text-text-muted m-0">File reads, edits, commands — all captured as events</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-3 rounded-lg bg-bg">
+            <span class="w-8 h-8 rounded-lg bg-purple-soft text-purple grid place-items-center text-[11px] font-bold shrink-0">3</span>
+            <div>
+              <p class="text-[13px] font-semibold text-text-primary m-0">Session ends</p>
+              <p class="text-[12px] text-text-muted m-0">Passport generated with risk score, test evidence, and recommendations</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-3 rounded-lg bg-bg">
+            <span class="w-8 h-8 rounded-lg bg-orange-soft text-orange grid place-items-center text-[11px] font-bold shrink-0">4</span>
+            <div>
+              <p class="text-[13px] font-semibold text-text-primary m-0">Review</p>
+              <p class="text-[12px] text-text-muted m-0">Run the AI Council, generate docs, export PR summaries</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Connection details %>
+    <div class="card mb-4">
+      <div class="p-6">
+        <h2 class="text-[13px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-4 m-0">Connection Details</h2>
+        <div class="space-y-2.5 text-[13px]">
+          <div class="flex justify-between"><span class="text-text-muted">Project</span><span class="font-semibold"><%= @project.name %></span></div>
+          <div class="flex justify-between"><span class="text-text-muted">Endpoint</span><code class="text-primary text-[12px]"><%= request.base_url %></code></div>
+          <div class="flex justify-between"><span class="text-text-muted">API Token</span><code class="text-text-soft text-[12px]"><%= @token.masked_token %></code></div>
+          <div class="flex justify-between"><span class="text-text-muted">Hooks</span><span class="font-semibold">SessionStart, Prompt, PostToolUse, Stop</span></div>
+          <div class="flex justify-between"><span class="text-text-muted">Privacy</span><span class="text-success font-semibold">Source code stays local</span></div>
+        </div>
+      </div>
+    </div>
+
+    <%# Manual alternative %>
+    <details class="card">
+      <summary class="p-4 cursor-pointer text-[13px] font-semibold text-text-soft hover:text-text-primary">
+        Manual setup (if you prefer step-by-step)
+      </summary>
+      <div class="px-6 pb-6 text-[12px] text-text-soft space-y-3">
+        <p class="m-0"><strong>1.</strong> Install the CLI: add <code>cli/</code> to your PATH</p>
+        <p class="m-0"><strong>2.</strong> Run <code>staffos login</code> — endpoint: <code><%= request.base_url %></code>, token: get from project settings</p>
+        <p class="m-0"><strong>3.</strong> Run <code>staffos init</code> in your project directory</p>
+        <p class="m-0"><strong>4.</strong> Or manually add hooks to <code>.claude/settings.json</code> — see the <a href="<%= hook_config_project_path(@project) %>" class="text-primary no-underline font-semibold">hook config page</a></p>
+      </div>
+    </details>
+  <% else %>
+    <div class="card p-6 text-center">
+      <p class="text-text-muted">Select a project from the topbar dropdown first.</p>
+    </div>
+  <% end %>
+</div>
