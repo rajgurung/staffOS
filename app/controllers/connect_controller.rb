@@ -6,26 +6,17 @@ class ConnectController < ApplicationController
     @token = @project.api_tokens.first || @project.api_tokens.create!(name: "Auto-generated")
   end
 
-  # Returns a self-contained Ruby setup script with token baked in
+  # Public script - no secrets baked in. Prompts user for token.
+  skip_before_action :authenticate_user!, only: [:script]
   def script
-    project = current_project
-    return head(:not_found) unless project
-
-    token = project.api_tokens.first || project.api_tokens.create!(name: "Auto-generated")
     endpoint = request.base_url
 
-    script = generate_script(
-      endpoint: endpoint,
-      token: token.token,
-      project_name: project.name
-    )
-
-    render plain: script, content_type: "text/plain"
+    render plain: generate_script(endpoint: endpoint), content_type: "text/plain"
   end
 
   private
 
-  def generate_script(endpoint:, token:, project_name:)
+  def generate_script(endpoint:)
     <<~RUBY
       #!/usr/bin/env ruby
       # StaffOS Quick Connect
@@ -36,26 +27,57 @@ class ConnectController < ApplicationController
       require "yaml"
 
       ENDPOINT = "#{endpoint}"
-      TOKEN = "#{token}"
-      PROJECT = "#{project_name}"
 
-      puts "\\n\\e[1mStaffOS Quick Connect\\e[0m"
+      puts ""
+      puts "\\e[1mStaffOS Quick Connect\\e[0m"
       puts "=" * 40
-      puts "Project:  \#{PROJECT}"
       puts "Endpoint: \#{ENDPOINT}"
       puts ""
 
-      # 1. Save credentials
+      # 1. Collect info from user
+      print "Project name [\\e[2m\#{File.basename(Dir.pwd).gsub(/[-_]/, ' ').gsub(/\\b\\w/, &:upcase)}\\e[0m]: "
+      input = $stdin.gets.chomp
+      project_name = input.empty? ? File.basename(Dir.pwd).gsub(/[-_]/, " ").gsub(/\\b\\w/, &:upcase) : input
+
+      puts ""
+      puts "Paste your API token from the StaffOS Connect page."
+      puts "  (Find it at \#{ENDPOINT}/connect)"
+      puts ""
+      print "API token: "
+      token = $stdin.gets.chomp
+
+      if token.empty?
+        puts "\\e[31m[ERROR]\\e[0m API token is required."
+        exit 1
+      end
+
+      # 2. Verify connection
+      require "net/http"
+      require "uri"
+      uri = URI("\#{ENDPOINT}/up")
+      begin
+        res = Net::HTTP.get_response(uri)
+        if res.code != "200"
+          puts "\\e[31m[ERROR]\\e[0m Could not reach StaffOS at \#{ENDPOINT} (HTTP \#{res.code})"
+          exit 1
+        end
+      rescue => e
+        puts "\\e[31m[ERROR]\\e[0m Could not reach StaffOS: \#{e.message}"
+        exit 1
+      end
+      puts "[OK] Connected to \#{ENDPOINT}"
+
+      # 3. Save credentials
       cred_dir = File.expand_path("~/.staffos")
       cred_file = File.join(cred_dir, "credentials.yml")
       FileUtils.mkdir_p(cred_dir)
-      File.write(cred_file, { "endpoint" => ENDPOINT, "token" => TOKEN }.to_yaml)
+      File.write(cred_file, { "endpoint" => ENDPOINT, "token" => token }.to_yaml)
       File.chmod(0600, cred_file)
       puts "[OK] Credentials saved to \#{cred_file}"
 
-      # 2. Create .staffos.yml
+      # 4. Create .staffos.yml
       config = {
-        "project_name" => PROJECT,
+        "project_name" => project_name,
         "repo_name" => `git remote get-url origin 2>/dev/null`.strip.then { |r|
           r.match(%r{[:/]([^/]+/[^/]+?)(?:\\.git)?$})&.[](1) || "local/\#{File.basename(Dir.pwd)}"
         },
@@ -74,12 +96,12 @@ class ConnectController < ApplicationController
         puts "[--] .staffos.yml already exists, skipping"
       end
 
-      # 3. Install Claude Code HTTP hooks
+      # 5. Install Claude Code HTTP hooks
       claude_dir = ".claude"
       settings_file = File.join(claude_dir, "settings.json")
       FileUtils.mkdir_p(claude_dir)
 
-      headers = { "X-StaffOS-Project" => PROJECT, "Authorization" => "Bearer \#{TOKEN}" }
+      headers = { "X-StaffOS-Project" => project_name, "Authorization" => "Bearer \#{token}" }
 
       hooks = {
         "SessionStart" => [{
@@ -122,7 +144,7 @@ class ConnectController < ApplicationController
       File.write(settings_file, JSON.pretty_generate(existing))
       puts "[OK] Claude Code hooks installed in \#{settings_file}"
 
-      # 4. Add .staffos.yml to .gitignore if not already there
+      # 6. Add .staffos.yml to .gitignore
       gitignore = ".gitignore"
       if File.exist?(gitignore)
         contents = File.read(gitignore)
