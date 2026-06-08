@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars and fill in your values
+# DO NOT commit terraform.tfvars — it contains secrets
+
+railway_token        = "your-railway-api-token"
+cloudflare_api_token = "your-cloudflare-api-token"
+cloudflare_zone_id   = "your-zone-id-for-rajgurung-me"
+rails_master_key     = "your-rails-master-key"
+anthropic_api_key    = "your-anthropic-api-key"
+domain               = "staffos.rajgurung.me"
