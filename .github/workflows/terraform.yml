@@ -59,7 +59,7 @@ jobs:
 
       - name: Comment PR with Plan
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const plan = `${{ steps.plan.outputs.stdout }}`.substring(0, 60000);
