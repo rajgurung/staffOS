@@ -75,7 +75,7 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
-    anthropic (1.46.0)
+    anthropic (1.49.0)
       cgi
       connection_pool
       standardwebhooks
@@ -382,7 +382,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
-  anthropic (~> 1.46)
+  anthropic (~> 1.49)
   bootsnap
   brakeman
   bundler-audit
