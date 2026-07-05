@@ -72,6 +72,12 @@ resource "railway_custom_domain" "staffos" {
   domain         = var.domain
   environment_id = railway_project.staffos.default_environment.id
   service_id     = railway_service.web.id
+
+  # The web app (Puma) listens on Railway's injected PORT=8080. Without an
+  # explicit target_port the provider sends 0, so Railway's edge has no port to
+  # route to — the domain returns "train has not arrived" and the TLS cert
+  # never validates. This is why the custom domain never worked.
+  target_port = 8080
 }
 
 # ── Cloudflare DNS ──
