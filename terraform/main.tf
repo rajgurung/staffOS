@@ -6,62 +6,21 @@ resource "railway_project" "staffos" {
 
 # ── PostgreSQL Database ──
 #
-# Self-managed Postgres with a persistent volume. The volume block (provider
-# >= 0.5) is what makes storage durable across redeploys — without it the
-# container's data is ephemeral. The volume mounts at the data directory and
-# PGDATA points at a subdirectory so initdb doesn't trip over the mount's
-# lost+found entry.
-
-resource "random_password" "postgres" {
-  length  = 32
-  special = false # keep the password URL-safe for DATABASE_URL
-}
-
-resource "railway_service" "postgres" {
-  name       = "postgres"
-  project_id = railway_project.staffos.id
-
-  source_image = "postgres:16"
-
-  volume = {
-    name       = "postgres-data"
-    mount_path = "/var/lib/postgresql/data"
-  }
-}
-
-resource "railway_variable" "pg_user" {
-  name           = "POSTGRES_USER"
-  value          = "staffos"
-  environment_id = railway_project.staffos.default_environment.id
-  service_id     = railway_service.postgres.id
-}
-
-resource "railway_variable" "pg_password" {
-  name           = "POSTGRES_PASSWORD"
-  value          = random_password.postgres.result
-  environment_id = railway_project.staffos.default_environment.id
-  service_id     = railway_service.postgres.id
-}
-
-resource "railway_variable" "pg_db" {
-  name           = "POSTGRES_DB"
-  value          = "staffos_production"
-  environment_id = railway_project.staffos.default_environment.id
-  service_id     = railway_service.postgres.id
-}
-
-resource "railway_variable" "pg_pgdata" {
-  name           = "PGDATA"
-  value          = "/var/lib/postgresql/data/pgdata"
-  environment_id = railway_project.staffos.default_environment.id
-  service_id     = railway_service.postgres.id
-}
-
-resource "railway_tcp_proxy" "postgres" {
-  application_port = 5432
-  environment_id   = railway_project.staffos.default_environment.id
-  service_id       = railway_service.postgres.id
-}
+# The database is Railway's managed PostgreSQL (service name "Postgres"),
+# provisioned from Railway's Postgres template (New → Database → PostgreSQL).
+# It is deliberately NOT a Terraform resource:
+#
+#   * Railway's managed Postgres is the platform's first-class database
+#     primitive — it ships with a persistent volume, automated backups, SSL,
+#     and correct PGDATA handling.
+#   * The community Railway provider cannot manage a service volume: attaching
+#     one attaches on Railway but returns null to Terraform, failing every
+#     apply's consistency check. A Terraform-defined raw postgres image would
+#     therefore be either broken (with a volume) or ephemeral (without one).
+#
+# Terraform owns everything around it — the web service, domain, DNS, and the
+# DATABASE_URL below, which references the managed service's own connection
+# string over the private network.
 
 # ── Web Application ──
 
@@ -75,15 +34,12 @@ resource "railway_service" "web" {
 
 # Environment variables for the web service
 locals {
-  # Build the connection string from the Postgres service's own variables over
-  # Railway's private network. Reference syntax is double-brace
-  # ${{service.VARIABLE}}; in HCL "$$" escapes to a literal "$" and the braces
-  # are literal (no "${" interpolation), so each token renders as e.g.
-  # ${{postgres.POSTGRES_USER}} for Railway to resolve at deploy time.
-  database_url = join("", [
-    "postgresql://$${{postgres.POSTGRES_USER}}:$${{postgres.POSTGRES_PASSWORD}}",
-    "@$${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/$${{postgres.POSTGRES_DB}}"
-  ])
+  # Reference the managed Postgres service's own DATABASE_URL (the private
+  # railway.internal connection string it publishes). Railway reference syntax
+  # is double-brace ${{Service.VARIABLE}}; in HCL "$$" escapes to a literal "$"
+  # and the braces are literal (no "${" interpolation), so this renders to
+  # exactly ${{Postgres.DATABASE_URL}} for Railway to resolve at deploy time.
+  database_url = "$${{Postgres.DATABASE_URL}}"
 
   web_env_vars = {
     RAILS_ENV                = "production"
