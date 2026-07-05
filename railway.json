@@ -5,6 +5,7 @@
     "buildCommand": "bundle install && bin/rails tailwindcss:build && bin/rails assets:precompile"
   },
   "deploy": {
+    "preDeployCommand": "bin/rails db:prepare",
     "startCommand": "/bin/sh -c \"bin/rails server -b 0.0.0.0 -p $PORT\"",
     "healthcheckPath": "/up",
     "restartPolicyType": "ON_FAILURE",
