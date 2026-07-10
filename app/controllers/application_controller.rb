@@ -5,10 +5,12 @@ class ApplicationController < ActionController::Base
   helper_method :current_project
 
   def current_project
-    @current_project ||= if session[:project_id]
-      Project.find_by(id: session[:project_id]) || Project.first
-    else
-      Project.first
+    @current_project ||= begin
+      # An explicit project_id param (e.g. links from a project page) overrides
+      # the session-based switcher and becomes the new context.
+      project = Project.find_by(id: params[:project_id]) || Project.find_by(id: session[:project_id]) || Project.first
+      session[:project_id] = project.id if project
+      project
     end
   end
 
