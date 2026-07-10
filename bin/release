@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+#
+# Release the StaffOS CLI to the Homebrew tap.
+#
+# Automates the ritual:
+#   1. tag cli-vX.Y.Z from the VERSION in cli/staffos, push the tag
+#   2. cut a GitHub release
+#   3. compute the sha256 of the release tarball
+#   4. render the formula and push it to the tap repo
+#   5. open a PR syncing packaging/homebrew/staffos.rb on main
+#
+# To cut a release: bump VERSION in cli/staffos, commit/merge to main, then run
+# this from a clean main checkout. Use --dry-run to preview without side effects.
+#
+# Env overrides:
+#   STAFFOS_TAP_REMOTE   git remote for the tap (default: the rajgurung tap)
+set -euo pipefail
+
+REPO_SLUG="rajgurung/staffOS"
+TAP_REMOTE="${STAFFOS_TAP_REMOTE:-git@github.com:rajgurung/homebrew-tap.git}"
+CLI_FILE="cli/staffos"
+FORMULA="packaging/homebrew/staffos.rb"
+
+DRY_RUN=false
+[ "${1:-}" = "--dry-run" ] && DRY_RUN=true
+
+info() { printf '\033[1m›\033[0m %s\n' "$1"; }
+die()  { printf '\033[31m✗\033[0m %s\n' "$1" >&2; exit 1; }
+run()  { if $DRY_RUN; then printf '  \033[2m(dry-run)\033[0m %s\n' "$*"; else "$@"; fi; }
+
+cd "$(git rev-parse --show-toplevel)"
+
+# --- preflight -------------------------------------------------------------
+command -v gh >/dev/null   || die "gh CLI not found"
+gh auth status >/dev/null 2>&1 || die "gh not authenticated (run: gh auth login)"
+[ -f "$CLI_FILE" ] || die "missing $CLI_FILE"
+[ -f "$FORMULA" ]  || die "missing $FORMULA"
+[ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] || die "not on main"
+if [ -n "$(git status --porcelain)" ]; then
+  $DRY_RUN || die "working tree not clean — commit or stash first"
+  info "working tree dirty (allowed under --dry-run)"
+fi
+
+VERSION="$(grep -oE 'VERSION *= *"[0-9]+\.[0-9]+\.[0-9]+"' "$CLI_FILE" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)"
+[ -n "$VERSION" ] || die "could not parse VERSION from $CLI_FILE"
+TAG="cli-v$VERSION"
+TARBALL="https://github.com/$REPO_SLUG/archive/refs/tags/$TAG.tar.gz"
+
+git fetch --tags -q origin
+if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+  die "tag $TAG already exists — bump VERSION in $CLI_FILE for a new release"
+fi
+
+info "Releasing StaffOS CLI $VERSION (tag $TAG)"
+$DRY_RUN && info "DRY RUN — no tags, releases, or pushes will happen"
+
+# --- 1. tag + push ---------------------------------------------------------
+run git tag "$TAG"
+run git push origin "$TAG"
+
+# --- 2. github release -----------------------------------------------------
+run gh release create "$TAG" \
+  --title "StaffOS CLI v$VERSION" \
+  --notes "Install: \`brew install rajgurung/tap/staffos\`"
+
+# --- 3. sha256 (wait for GitHub to generate the archive) -------------------
+if $DRY_RUN; then
+  SHA="0000000000000000000000000000000000000000000000000000000000000000"
+  info "would compute sha256 from $TARBALL"
+else
+  info "computing sha256 from $TARBALL"
+  SHA=""
+  for _ in $(seq 1 10); do
+    SHA="$(curl -sfL "$TARBALL" | shasum -a 256 | awk '{print $1}')" || SHA=""
+    [ -n "$SHA" ] && break
+    sleep 3
+  done
+  [ -n "$SHA" ] || die "could not fetch/hash $TARBALL"
+fi
+info "sha256: $SHA"
+
+# --- 4. render formula + push to tap --------------------------------------
+# Substitute url + sha256, then drop the source-of-truth header comment so the
+# tap gets a clean formula (everything from `class ...` onward).
+render() {
+  perl -pe 's|^(\s*url ).*|${1}"'"$TARBALL"'"|; s|^(\s*sha256 ).*|${1}"'"$SHA"'"|' "$FORMULA" \
+    | awk 'seen || /^class /{seen=1; print}'
+}
+ruby -c <(render) >/dev/null || die "rendered formula has a syntax error"
+
+TAP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TAP_DIR"' EXIT
+if $DRY_RUN; then
+  info "would push Formula/staffos.rb to $TAP_REMOTE:"
+  render | sed 's/^/    /'
+else
+  git clone -q "$TAP_REMOTE" "$TAP_DIR"
+  mkdir -p "$TAP_DIR/Formula"
+  render > "$TAP_DIR/Formula/staffos.rb"
+  git -C "$TAP_DIR" add Formula/staffos.rb
+  if git -C "$TAP_DIR" diff --cached --quiet; then
+    info "tap formula already up to date"
+  else
+    git -C "$TAP_DIR" commit -q -m "staffos $VERSION"
+    git -C "$TAP_DIR" push -q
+    info "pushed formula to tap"
+  fi
+fi
+
+# --- 5. sync the in-repo mirror via PR -------------------------------------
+if $DRY_RUN; then
+  info "would sync $FORMULA (url/sha) and open a PR"
+elif perl -pe 's|^(\s*url ).*|${1}"'"$TARBALL"'"|; s|^(\s*sha256 ).*|${1}"'"$SHA"'"|' "$FORMULA" \
+       | git diff --no-index --quiet "$FORMULA" - 2>/dev/null; then
+  info "$FORMULA already in sync"
+else
+  # In-place url/sha edit so the mirror keeps its header comment.
+  perl -i -pe 's|^(\s*url ).*|${1}"'"$TARBALL"'"|; s|^(\s*sha256 ).*|${1}"'"$SHA"'"|' "$FORMULA"
+  BRANCH="release/$TAG"
+  run git switch -c "$BRANCH"
+  run git add "$FORMULA"
+  run git commit -q -m "Sync brew formula for $TAG"
+  run git push -u origin "$BRANCH"
+  if $DRY_RUN; then
+    info "would open a PR syncing $FORMULA"
+  else
+    gh pr create --title "Sync brew formula for $TAG" \
+      --body "Automated by \`bin/release\`: updates the formula mirror to the $TAG sha256." >/dev/null
+    git switch -q main
+    info "opened sync PR for $FORMULA"
+  fi
+fi
+
+info "Done. Verify with: brew update && brew upgrade staffos && staffos version"
