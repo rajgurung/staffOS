@@ -57,6 +57,16 @@
   --color-orange: #f97316;
   --color-orange-soft: rgba(249, 115, 22, 0.10);
 
+  /* Landing page */
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 11s ease-in-out infinite;
+  --animate-float-slower: float 15s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
+  }
+
   /* Radii */
   --radius-sm: 8px;
   --radius-md: 12px;

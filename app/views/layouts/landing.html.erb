@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>StaffOS — Trust every line your AI writes</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="StaffOS turns every AI coding session into a Run Passport: a verified record of what changed, what was tested, and what still needs a human.">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <%= stylesheet_link_tag :app %>
+  </head>
+
+  <body class="font-sans text-text-primary antialiased bg-white">
+    <%= yield %>
+  </body>
+</html>
