@@ -1,17 +1,10 @@
-# StaffOS Homebrew formula.
+# StaffOS Homebrew formula — source of truth for the tap
+# (github.com/rajgurung/homebrew-tap → Formula/staffos.rb).
 #
-# Source of truth for the formula that lives in the tap repo
-# (github.com/rajgurung/homebrew-tap → Formula/staffos.rb). Edit here, then
-# copy to the tap on each release.
+# Don't hand-edit url/sha256: bump VERSION in cli/staffos, then run `bin/release`,
+# which tags, cuts the GitHub release, and pushes the rendered formula to the tap.
 #
-# Release flow:
-#   1. git tag cli-vX.Y.Z && git push origin cli-vX.Y.Z   (on rajgurung/staffOS)
-#   2. gh release create cli-vX.Y.Z
-#   3. sha256:  curl -sL <tarball-url> | shasum -a 256
-#   4. update url + sha256 below, copy to rajgurung/homebrew-tap
-#
-# Install:
-#   brew install rajgurung/tap/staffos
+# Install: brew install rajgurung/tap/staffos
 class Staffos < Formula
   desc "Capture Claude Code sessions into StaffOS Run Passports"
   homepage "https://github.com/rajgurung/staffOS"
