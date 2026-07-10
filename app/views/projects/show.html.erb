@@ -85,7 +85,7 @@
       <% end %>
 
       <% if @workstreams_total > @workstreams.size %>
-        <%= link_to "View all #{@workstreams_total} workstreams", workstreams_path, class: "block py-1.5 px-2 text-[11px] font-bold text-primary no-underline hover:underline" %>
+        <%= link_to "View all #{@workstreams_total} workstreams", workstreams_path(project_id: @project.id), class: "block py-1.5 px-2 text-[11px] font-bold text-primary no-underline hover:underline" %>
       <% end %>
 
       <% if @unassigned_sessions.any? %>
@@ -101,7 +101,7 @@
               <%= render "tree_session", session: session %>
             <% end %>
             <% if @unassigned_total > @unassigned_sessions.size %>
-              <%= link_to "+ #{@unassigned_total - @unassigned_sessions.size} more sessions", runs_path, class: "block py-1.5 px-2 text-[11px] font-bold text-primary no-underline hover:underline" %>
+              <%= link_to "+ #{@unassigned_total - @unassigned_sessions.size} more sessions", runs_path(project_id: @project.id), class: "block py-1.5 px-2 text-[11px] font-bold text-primary no-underline hover:underline" %>
             <% end %>
           </div>
         </details>
