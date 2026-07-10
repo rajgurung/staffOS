@@ -1,0 +1,215 @@
+<%# ---- Nav ---- %>
+<nav class="absolute top-0 inset-x-0 z-20">
+  <div class="max-w-6xl mx-auto px-6 h-[72px] flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-purple grid place-items-center text-white text-[15px] font-bold shadow-primary">S</div>
+      <span class="text-[17px] font-[850] tracking-[-0.03em]">StaffOS</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="#how-it-works" class="text-[13px] font-semibold text-text-soft no-underline hover:text-text-primary max-sm:hidden">How it works</a>
+      <%= link_to "Sign in", new_user_session_path, class: "h-9 px-4 rounded-lg bg-text-primary text-white text-[13px] font-bold inline-flex items-center no-underline hover:bg-text-primary/85 transition-colors" %>
+    </div>
+  </div>
+</nav>
+
+<%# ---- Hero ---- %>
+<header class="relative overflow-hidden bg-gradient-to-b from-bg-wash via-white to-white">
+  <%# ambient color washes %>
+  <div class="absolute -top-32 -left-32 w-[480px] h-[480px] rounded-full bg-primary/10 blur-3xl"></div>
+  <div class="absolute top-16 -right-40 w-[520px] h-[520px] rounded-full bg-purple/10 blur-3xl"></div>
+
+  <div class="relative max-w-6xl mx-auto px-6 pt-36 pb-8 text-center">
+    <span class="inline-flex items-center gap-2 h-8 px-3.5 rounded-full bg-primary-soft text-primary-dark text-[12px] font-[800] mb-6">
+      <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+      The trust layer for AI-assisted engineering
+    </span>
+    <h1 class="text-[56px] max-md:text-[38px] font-[900] leading-[1.04] tracking-[-0.045em] mb-5">
+      Your AI writes the code.<br>
+      <span class="bg-gradient-to-r from-primary via-purple to-primary bg-clip-text text-transparent">StaffOS writes the receipts.</span>
+    </h1>
+    <p class="max-w-xl mx-auto text-[17px] text-text-soft leading-relaxed mb-8">
+      Every Claude Code session becomes a <strong>Run Passport</strong> — a verified record of
+      what changed, what was tested, what's risky, and what still needs a human eye.
+    </p>
+    <div class="flex items-center justify-center gap-3">
+      <%= link_to "Get started", new_user_session_path, class: "h-12 px-6 rounded-xl bg-gradient-to-br from-primary to-purple text-white text-[14px] font-bold inline-flex items-center no-underline shadow-primary hover:opacity-90 transition-opacity" %>
+      <a href="#how-it-works" class="h-12 px-6 rounded-xl border border-panel-border-strong bg-white text-text-primary text-[14px] font-bold inline-flex items-center no-underline hover:bg-bg transition-colors">See how it works</a>
+    </div>
+  </div>
+
+  <%# the landscape: layered hills with the product's artifacts floating above %>
+  <div class="relative max-w-6xl mx-auto px-6 h-[380px] max-md:h-[300px]">
+    <svg class="absolute bottom-0 inset-x-0 w-full h-[300px] max-md:h-[220px]" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="#6366f1" stop-opacity="0.12"/>
+        </linearGradient>
+        <linearGradient id="hill-far" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.14"/>
+          <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.05"/>
+        </linearGradient>
+        <linearGradient id="hill-mid" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#6366f1" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#6366f1" stop-opacity="0.07"/>
+        </linearGradient>
+        <linearGradient id="hill-near" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.32"/>
+          <stop offset="100%" stop-color="#6366f1" stop-opacity="0.10"/>
+        </linearGradient>
+      </defs>
+      <circle cx="600" cy="150" r="110" fill="url(#sun)"/>
+      <path d="M0,190 C200,120 380,210 600,170 C820,130 1000,200 1200,150 L1200,300 L0,300 Z" fill="url(#hill-far)"/>
+      <path d="M0,240 C250,170 480,250 700,210 C900,175 1080,240 1200,205 L1200,300 L0,300 Z" fill="url(#hill-mid)"/>
+      <path d="M0,285 C300,215 550,290 820,250 C1010,222 1130,275 1200,255 L1200,300 L0,300 Z" fill="url(#hill-near)"/>
+    </svg>
+
+    <%# floating artifact: run passport %>
+    <div class="absolute left-[8%] bottom-[110px] w-[270px] max-md:hidden animate-float">
+      <div class="rounded-2xl bg-white/90 backdrop-blur border border-panel-border shadow-elevated p-4 text-left">
+        <div class="flex items-center justify-between mb-2.5">
+          <span class="inline-flex items-center h-[18px] px-1.5 rounded bg-success text-white text-[9px] font-bold tracking-wide">RUN PASSPORT</span>
+          <span class="text-[20px] font-[900] tracking-[-0.04em]">92%</span>
+        </div>
+        <p class="text-[13px] font-[700] m-0 mb-1.5">Fix OAuth token refresh race</p>
+        <div class="flex items-center gap-2 text-[10px]">
+          <span class="inline-flex items-center h-[18px] px-1.5 rounded-md bg-success-soft text-success font-bold">Low risk</span>
+          <span class="text-text-muted font-semibold">34 tests ✓</span>
+          <span class="text-text-muted font-semibold">6 files</span>
+        </div>
+      </div>
+    </div>
+
+    <%# floating artifact: session events %>
+    <div class="absolute right-[10%] bottom-[150px] w-[240px] max-md:hidden animate-float-slow">
+      <div class="rounded-2xl bg-white/90 backdrop-blur border border-panel-border shadow-elevated p-4 text-left">
+        <span class="inline-flex items-center h-[18px] px-1.5 rounded bg-blue text-white text-[9px] font-bold tracking-wide mb-2">SESSION</span>
+        <div class="font-mono text-[10px] text-text-soft space-y-1.5">
+          <p class="m-0"><span class="text-success">✓</span> edit&nbsp; app/models/token.rb</p>
+          <p class="m-0"><span class="text-success">✓</span> run&nbsp;&nbsp; rails test</p>
+          <p class="m-0"><span class="text-warning">●</span> touch config/oauth.yml</p>
+        </div>
+      </div>
+    </div>
+
+    <%# floating artifact: ai council %>
+    <div class="absolute left-[38%] bottom-[190px] w-[200px] max-md:hidden animate-float-slower">
+      <div class="rounded-2xl bg-white/90 backdrop-blur border border-panel-border shadow-elevated p-3.5 text-left">
+        <div class="flex items-center justify-between mb-2">
+          <span class="inline-flex items-center h-[18px] px-1.5 rounded bg-purple text-white text-[9px] font-bold tracking-wide">AI COUNCIL</span>
+          <span class="text-[14px] font-[900]">8.4<span class="text-[10px] text-text-muted font-bold">/10</span></span>
+        </div>
+        <div class="flex -space-x-1">
+          <% %w[bg-teal bg-blue bg-purple bg-orange bg-rose bg-primary].each do |c| %>
+            <span class="w-5 h-5 rounded-full <%= c %> border-2 border-white"></span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<%# ---- Problem ---- %>
+<section class="py-20 border-t border-panel-border">
+  <div class="max-w-3xl mx-auto px-6 text-center">
+    <p class="text-[13px] font-[800] tracking-[0.08em] uppercase text-primary mb-4">Why StaffOS</p>
+    <h2 class="text-[30px] max-md:text-[24px] font-[850] tracking-[-0.04em] leading-tight mb-4">
+      AI writes more of your codebase every week.<br class="max-md:hidden"> Who's reading it?
+    </h2>
+    <p class="text-[15px] text-text-soft leading-relaxed m-0">
+      Claude Code, Cursor, Codex — they produce invisible, hard-to-audit work. Diffs land without
+      context, tests pass without evidence, and decisions vanish when the session ends. Teams need
+      a way to trust, review, govern, and <em>remember</em> AI-written code.
+    </p>
+  </div>
+</section>
+
+<%# ---- How it fits together ---- %>
+<section id="how-it-works" class="py-20 bg-bg/60 border-t border-panel-border">
+  <div class="max-w-3xl mx-auto px-6">
+    <div class="text-center mb-10">
+      <p class="text-[13px] font-[800] tracking-[0.08em] uppercase text-primary mb-4">The model</p>
+      <h2 class="text-[30px] max-md:text-[24px] font-[850] tracking-[-0.04em] mb-3">How it fits together</h2>
+      <p class="text-[15px] text-text-soft m-0">Three concepts, anchored to the git workflow you already know.</p>
+    </div>
+    <div class="rounded-2xl bg-white border border-panel-border shadow-elevated p-6 max-md:p-4">
+      <%= render "shared/concept_diagram" %>
+    </div>
+  </div>
+</section>
+
+<%# ---- Features ---- %>
+<section class="py-20 border-t border-panel-border">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-12">
+      <p class="text-[13px] font-[800] tracking-[0.08em] uppercase text-primary mb-4">What you get</p>
+      <h2 class="text-[30px] max-md:text-[24px] font-[850] tracking-[-0.04em] m-0">Evidence, not vibes</h2>
+    </div>
+    <div class="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1">
+      <% [
+        ["bg-success-soft", "bg-success", "Run Passports", "A readiness score, risk level, files touched, and test evidence for every session. Versioned as the work evolves."],
+        ["bg-warning-soft", "bg-warning", "Deterministic risk scoring", "Auth files, payment paths, infra changes — flagged by rules you control. No LLM required to know what's dangerous."],
+        ["bg-purple-soft", "bg-purple", "AI Council", "Six personas review the change: Staff Engineer, SRE, Security, PM, Devil's Advocate, Writing Coach. Opt-in, per passport."],
+        ["bg-blue-soft", "bg-blue", "Living timeline", "Every edit, command, and test run captured as events — the story of the session, in order, replayable."],
+        ["bg-orange-soft", "bg-orange", "Documentation brain", "Decision logs, ADRs, and project memory that survive the branch. Merged workstreams promote their knowledge up."],
+        ["bg-primary-soft", "bg-primary", "Privacy-first", "Hooks send metadata, not source. Your code stays on your machine — that's the default, not a setting."]
+      ].each do |soft, solid, title, desc| %>
+        <div class="rounded-2xl border border-panel-border bg-white p-6 hover:shadow-elevated transition-shadow">
+          <div class="w-10 h-10 rounded-xl <%= soft %> grid place-items-center mb-4">
+            <span class="w-3.5 h-3.5 rounded-md <%= solid %>"></span>
+          </div>
+          <h3 class="text-[15px] font-[800] tracking-[-0.02em] mb-1.5"><%= title %></h3>
+          <p class="text-[13px] text-text-soft leading-relaxed m-0"><%= desc %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<%# ---- Flow ---- %>
+<section class="py-20 bg-bg/60 border-t border-panel-border">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="text-center mb-12">
+      <p class="text-[13px] font-[800] tracking-[0.08em] uppercase text-primary mb-4">The flow</p>
+      <h2 class="text-[30px] max-md:text-[24px] font-[850] tracking-[-0.04em] m-0">You just use Claude Code. StaffOS does the bookkeeping.</h2>
+    </div>
+    <div class="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
+      <% [
+        ["bg-primary-soft text-primary", "Session starts", "A workstream is created for your git branch, automatically."],
+        ["bg-blue-soft text-blue", "You work", "File edits, commands, tests — captured as events via hooks."],
+        ["bg-purple-soft text-purple", "Session ends", "A passport is generated: readiness, risk, and recommendations."],
+        ["bg-orange-soft text-orange", "You review", "Run the AI Council, generate docs, export the PR summary."]
+      ].each_with_index do |(badge, title, desc), i| %>
+        <div class="relative rounded-2xl border border-panel-border bg-white p-5">
+          <span class="w-8 h-8 rounded-lg <%= badge %> grid place-items-center text-[12px] font-[900] mb-3"><%= i + 1 %></span>
+          <h3 class="text-[14px] font-[800] tracking-[-0.02em] mb-1"><%= title %></h3>
+          <p class="text-[12px] text-text-soft leading-relaxed m-0"><%= desc %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<%# ---- CTA ---- %>
+<section class="py-20 border-t border-panel-border">
+  <div class="max-w-4xl mx-auto px-6">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-purple px-10 py-14 text-center shadow-primary">
+      <div class="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10 blur-2xl"></div>
+      <div class="absolute -bottom-24 -left-16 w-72 h-72 rounded-full bg-white/10 blur-2xl"></div>
+      <h2 class="relative text-[30px] max-md:text-[24px] font-[900] tracking-[-0.04em] text-white mb-3">Connect a project in two minutes</h2>
+      <p class="relative text-[15px] text-white/80 mb-8 m-0">One token, one command, and every session starts leaving a paper trail.</p>
+      <%= link_to "Get started", new_user_session_path, class: "relative h-12 px-7 rounded-xl bg-white text-primary-dark text-[14px] font-[800] inline-flex items-center no-underline hover:bg-white/90 transition-colors" %>
+    </div>
+  </div>
+</section>
+
+<%# ---- Footer ---- %>
+<footer class="border-t border-panel-border py-8">
+  <div class="max-w-6xl mx-auto px-6 flex items-center justify-between max-sm:flex-col max-sm:gap-3">
+    <div class="flex items-center gap-2">
+      <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-purple grid place-items-center text-white text-[10px] font-bold">S</div>
+      <span class="text-[13px] font-[800] tracking-[-0.02em]">StaffOS</span>
+    </div>
+    <p class="text-[12px] text-text-muted m-0">Source code stays local. That's the point.</p>
+  </div>
+</footer>

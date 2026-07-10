@@ -5,7 +5,7 @@ Rails.application.routes.draw do
   }
   get "up" => "rails/health#show", as: :rails_health_check
 
-  root "dashboard#index"
+  root "landing#index"
 
   get "dashboard", to: "dashboard#index", as: :dashboard
   post "switch_project", to: "application#switch_project", as: :switch_project
