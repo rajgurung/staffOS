@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Status colors are interpolated in views (bg-<%= status_color %>), so the
+   scanner can't see them — force generation. */
+@source inline("{bg,text}-{success,warning,danger,info}");
+@source inline("{bg,text}-{success,warning,danger,info}-soft");
+
 @theme {
   /* Surface */
   --color-bg: #f4f5fa;

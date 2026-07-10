@@ -8,6 +8,8 @@ class ProjectsController < ApplicationController
   def show
     @recent_sessions = @project.agent_sessions.order(started_at: :desc).limit(5)
     @tokens = @project.api_tokens
+    @workstreams = @project.workstreams.recent.includes(agent_sessions: :run_passport)
+    @unassigned_sessions = @project.agent_sessions.where(workstream_id: nil).includes(:run_passport).order(started_at: :desc)
   end
 
   def new

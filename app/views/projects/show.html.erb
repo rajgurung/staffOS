@@ -43,6 +43,62 @@
   <% end %>
 </div>
 
+<%= card(title: "Workstream Tree", classes: "mb-6") do %>
+  <div class="flex items-center gap-2.5 mb-2">
+    <span class="text-[14px] font-[800] tracking-[-0.02em]"><%= @project.name %></span>
+    <code class="text-[11px] text-text-muted"><%= @project.repo_name %></code>
+  </div>
+
+  <% if @workstreams.empty? && @unassigned_sessions.empty? %>
+    <p class="text-text-muted text-sm m-0">No workstreams or sessions yet. They appear when Claude Code sessions are captured.</p>
+  <% else %>
+    <div class="ml-1.5 border-l border-panel-border pl-4 space-y-1">
+      <% @workstreams.each do |ws| %>
+        <details class="group" <%= "open" if ws.status == "active" %>>
+          <summary class="flex items-center gap-2.5 py-1.5 px-2 rounded-sm cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-bg">
+            <svg class="w-3 h-3 text-text-muted shrink-0 transition-transform group-open:rotate-90" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
+            <span class="w-2 h-2 rounded-full bg-<%= ws.status_color %> <%= ws.status == 'active' ? 'animate-pulse' : '' %> shrink-0"></span>
+            <span class="text-[13px] font-[700] text-text-primary truncate"><%= ws.display_name %></span>
+            <code class="text-[11px] text-primary shrink-0"><%= ws.branch_name %></code>
+            <%= status_pill(ws.status.titleize, color: ws.status_color.to_sym) %>
+            <span class="ml-auto flex items-center gap-2 shrink-0">
+              <span class="text-[11px] text-text-muted"><%= ws.agent_sessions.size %> session<%= ws.agent_sessions.size == 1 ? '' : 's' %></span>
+              <% if ws.current_passport %>
+                <span class="text-[13px] font-[800]"><%= ws.current_passport.readiness_score %>%</span>
+              <% end %>
+              <%= link_to "View", workstream_path(ws), class: "text-[11px] font-bold text-primary no-underline hover:underline" %>
+            </span>
+          </summary>
+          <div class="ml-[5px] border-l border-panel-border pl-4 mt-0.5">
+            <% ws.agent_sessions.sort_by { |s| s.started_at || Time.at(0) }.reverse.each do |session| %>
+              <%= render "tree_session", session: session %>
+            <% end %>
+            <% if ws.agent_sessions.empty? %>
+              <p class="text-[11px] text-text-muted py-1.5 px-2 m-0">No sessions yet</p>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+
+      <% if @unassigned_sessions.any? %>
+        <details class="group">
+          <summary class="flex items-center gap-2.5 py-1.5 px-2 rounded-sm cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-bg">
+            <svg class="w-3 h-3 text-text-muted shrink-0 transition-transform group-open:rotate-90" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
+            <span class="w-2 h-2 rounded-full bg-panel-border shrink-0"></span>
+            <span class="text-[13px] font-[700] text-text-muted">Unassigned sessions</span>
+            <span class="ml-auto text-[11px] text-text-muted shrink-0"><%= @unassigned_sessions.size %></span>
+          </summary>
+          <div class="ml-[5px] border-l border-panel-border pl-4 mt-0.5">
+            <% @unassigned_sessions.each do |session| %>
+              <%= render "tree_session", session: session %>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>
+
 <%= card(title: "Risk Rules") do %>
   <% if @project.risk_rules.present? %>
     <div class="space-y-2">

@@ -1,0 +1,19 @@
+<%= link_to run_path(session), class: "flex items-center gap-2.5 py-1.5 px-2 rounded-sm no-underline hover:bg-bg group" do %>
+  <span class="w-1.5 h-1.5 rounded-full <%= session.status == "active" ? "bg-success animate-pulse" : "bg-panel-border" %> shrink-0"></span>
+  <span class="text-[12px] font-semibold text-text-soft group-hover:text-text-primary truncate">
+    <%= session.agent_name.presence || session.provider.presence || "Session" %>
+  </span>
+  <span class="text-[11px] text-text-muted shrink-0">
+    <%= session.started_at ? "#{time_ago_in_words(session.started_at)} ago" : "not started" %>
+  </span>
+  <% if session.run_passport %>
+    <span class="ml-auto flex items-center gap-2 shrink-0">
+      <% if session.run_passport.risk_level.present? %>
+        <%= status_pill(session.run_passport.risk_level, color: session.run_passport.risk_color.to_sym) %>
+      <% end %>
+      <span class="text-[12px] font-[800]"><%= session.run_passport.readiness_score %>%</span>
+    </span>
+  <% else %>
+    <span class="ml-auto text-[11px] text-text-muted shrink-0">no passport</span>
+  <% end %>
+<% end %>
