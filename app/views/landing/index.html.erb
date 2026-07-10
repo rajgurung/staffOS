@@ -147,16 +147,16 @@
     </div>
     <div class="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1">
       <% [
-        ["success", "Run Passports", "A readiness score, risk level, files touched, and test evidence for every session. Versioned as the work evolves."],
-        ["warning", "Deterministic risk scoring", "Auth files, payment paths, infra changes — flagged by rules you control. No LLM required to know what's dangerous."],
-        ["purple", "AI Council", "Six personas review the change: Staff Engineer, SRE, Security, PM, Devil's Advocate, Writing Coach. Opt-in, per passport."],
-        ["blue", "Living timeline", "Every edit, command, and test run captured as events — the story of the session, in order, replayable."],
-        ["orange", "Documentation brain", "Decision logs, ADRs, and project memory that survive the branch. Merged workstreams promote their knowledge up."],
-        ["primary", "Privacy-first", "Hooks send metadata, not source. Your code stays on your machine — that's the default, not a setting."]
-      ].each do |color, title, desc| %>
+        ["bg-success-soft", "bg-success", "Run Passports", "A readiness score, risk level, files touched, and test evidence for every session. Versioned as the work evolves."],
+        ["bg-warning-soft", "bg-warning", "Deterministic risk scoring", "Auth files, payment paths, infra changes — flagged by rules you control. No LLM required to know what's dangerous."],
+        ["bg-purple-soft", "bg-purple", "AI Council", "Six personas review the change: Staff Engineer, SRE, Security, PM, Devil's Advocate, Writing Coach. Opt-in, per passport."],
+        ["bg-blue-soft", "bg-blue", "Living timeline", "Every edit, command, and test run captured as events — the story of the session, in order, replayable."],
+        ["bg-orange-soft", "bg-orange", "Documentation brain", "Decision logs, ADRs, and project memory that survive the branch. Merged workstreams promote their knowledge up."],
+        ["bg-primary-soft", "bg-primary", "Privacy-first", "Hooks send metadata, not source. Your code stays on your machine — that's the default, not a setting."]
+      ].each do |soft, solid, title, desc| %>
         <div class="rounded-2xl border border-panel-border bg-white p-6 hover:shadow-elevated transition-shadow">
-          <div class="w-10 h-10 rounded-xl bg-<%= color %>-soft text-<%= color %> grid place-items-center mb-4">
-            <span class="w-3.5 h-3.5 rounded-md bg-<%= color %>"></span>
+          <div class="w-10 h-10 rounded-xl <%= soft %> grid place-items-center mb-4">
+            <span class="w-3.5 h-3.5 rounded-md <%= solid %>"></span>
           </div>
           <h3 class="text-[15px] font-[800] tracking-[-0.02em] mb-1.5"><%= title %></h3>
           <p class="text-[13px] text-text-soft leading-relaxed m-0"><%= desc %></p>
@@ -175,13 +175,13 @@
     </div>
     <div class="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
       <% [
-        ["primary", "Session starts", "A workstream is created for your git branch, automatically."],
-        ["blue", "You work", "File edits, commands, tests — captured as events via hooks."],
-        ["purple", "Session ends", "A passport is generated: readiness, risk, and recommendations."],
-        ["orange", "You review", "Run the AI Council, generate docs, export the PR summary."]
-      ].each_with_index do |(color, title, desc), i| %>
+        ["bg-primary-soft text-primary", "Session starts", "A workstream is created for your git branch, automatically."],
+        ["bg-blue-soft text-blue", "You work", "File edits, commands, tests — captured as events via hooks."],
+        ["bg-purple-soft text-purple", "Session ends", "A passport is generated: readiness, risk, and recommendations."],
+        ["bg-orange-soft text-orange", "You review", "Run the AI Council, generate docs, export the PR summary."]
+      ].each_with_index do |(badge, title, desc), i| %>
         <div class="relative rounded-2xl border border-panel-border bg-white p-5">
-          <span class="w-8 h-8 rounded-lg bg-<%= color %>-soft text-<%= color %> grid place-items-center text-[12px] font-[900] mb-3"><%= i + 1 %></span>
+          <span class="w-8 h-8 rounded-lg <%= badge %> grid place-items-center text-[12px] font-[900] mb-3"><%= i + 1 %></span>
           <h3 class="text-[14px] font-[800] tracking-[-0.02em] mb-1"><%= title %></h3>
           <p class="text-[12px] text-text-soft leading-relaxed m-0"><%= desc %></p>
         </div>

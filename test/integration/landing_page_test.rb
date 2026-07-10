@@ -9,8 +9,7 @@ class LandingPageTest < ActionDispatch::IntegrationTest
   end
 
   test "signed-in users are redirected to the dashboard" do
-    user = User.create!(email: "landing-test@example.com", name: "Test", password: "password123")
-    sign_in user
+    sign_in_user
     get root_path
     assert_redirected_to dashboard_path
   end
