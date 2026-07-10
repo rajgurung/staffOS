@@ -97,14 +97,24 @@ bin/dev              # http://localhost:3000
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
 
+### Install the CLI
+
+```bash
+brew install rajgurung/tap/staffos
+```
+
+No Homebrew? The CLI is a single, dependency-free Ruby script — grab it from the
+[latest release](https://github.com/rajgurung/staffOS/releases) or run
+`cli/staffos` straight from a checkout.
+
 ### Connect a repo with the CLI
 
 ```bash
-cli/staffos login        # enter your endpoint + project token
-cli/staffos init         # writes .staffos.yml and installs Claude Code hooks
+staffos login        # enter your endpoint + project token
+staffos init         # writes .staffos.yml and installs Claude Code hooks
 # ...use Claude Code normally — events are captured automatically...
-cli/staffos passport     # see the latest passport for your branch
-cli/staffos disconnect   # remove credentials and hooks
+staffos passport     # see the latest passport for your branch
+staffos disconnect   # remove credentials and hooks
 ```
 
 `init` installs HTTP hooks (`SessionStart`, `UserPromptSubmit`, pre/post tool
