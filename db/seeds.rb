@@ -7,7 +7,7 @@ unless Rails.env.development?
 end
 
 # Default users
-User.find_or_create_by!(email: "raj@staffos.dev") { |u| u.name = "Raj Rathod"; u.password = "password123"; u.password_confirmation = "password123" }
+User.find_or_create_by!(email: "raj@staffos.dev") { |u| u.name = "Raj Gurung"; u.password = "password123"; u.password_confirmation = "password123" }
 User.find_or_create_by!(email: "raj@local.dev") { |u| u.name = "Raj"; u.password = "staffos123"; u.password_confirmation = "staffos123" }
 
 # Projects
