@@ -1,4 +1,8 @@
 class ProjectsController < ApplicationController
+  # Caps for the workstream tree so long-lived projects don't render their entire history
+  TREE_WORKSTREAMS_LIMIT = 10
+  TREE_SESSIONS_LIMIT = 5
+
   before_action :set_project, only: [:show, :edit, :update, :destroy, :hook_config]
 
   def index
@@ -8,8 +12,11 @@ class ProjectsController < ApplicationController
   def show
     @recent_sessions = @project.agent_sessions.order(started_at: :desc).limit(5)
     @tokens = @project.api_tokens
-    @workstreams = @project.workstreams.recent.includes(:run_passports, agent_sessions: :run_passport)
-    @unassigned_sessions = @project.agent_sessions.where(workstream_id: nil).includes(:run_passport).order(started_at: :desc)
+    @workstreams_total = @project.workstreams.count
+    @workstreams = @project.workstreams.recent.limit(TREE_WORKSTREAMS_LIMIT).includes(:run_passports, agent_sessions: :run_passport)
+    unassigned = @project.agent_sessions.where(workstream_id: nil)
+    @unassigned_total = unassigned.count
+    @unassigned_sessions = unassigned.includes(:run_passport).order(started_at: :desc).limit(TREE_SESSIONS_LIMIT)
   end
 
   def new

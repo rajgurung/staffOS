@@ -70,14 +70,22 @@
             </span>
           </summary>
           <div class="ml-[5px] border-l border-panel-border pl-4 mt-0.5">
-            <% ws.agent_sessions.sort_by { |s| s.started_at || Time.at(0) }.reverse.each do |session| %>
+            <% sessions = ws.agent_sessions.sort_by { |s| s.started_at || Time.at(0) }.reverse %>
+            <% sessions.first(ProjectsController::TREE_SESSIONS_LIMIT).each do |session| %>
               <%= render "tree_session", session: session %>
             <% end %>
-            <% if ws.agent_sessions.empty? %>
+            <% if sessions.size > ProjectsController::TREE_SESSIONS_LIMIT %>
+              <%= link_to "+ #{sessions.size - ProjectsController::TREE_SESSIONS_LIMIT} more sessions", workstream_path(ws), class: "block py-1.5 px-2 text-[11px] font-bold text-primary no-underline hover:underline" %>
+            <% end %>
+            <% if sessions.empty? %>
               <p class="text-[11px] text-text-muted py-1.5 px-2 m-0">No sessions yet</p>
             <% end %>
           </div>
         </details>
+      <% end %>
+
+      <% if @workstreams_total > @workstreams.size %>
+        <%= link_to "View all #{@workstreams_total} workstreams", workstreams_path, class: "block py-1.5 px-2 text-[11px] font-bold text-primary no-underline hover:underline" %>
       <% end %>
 
       <% if @unassigned_sessions.any? %>
@@ -86,11 +94,14 @@
             <svg class="w-3 h-3 text-text-muted shrink-0 transition-transform group-open:rotate-90" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
             <span class="w-2 h-2 rounded-full bg-panel-border shrink-0"></span>
             <span class="text-[13px] font-[700] text-text-muted">Unassigned sessions</span>
-            <span class="ml-auto text-[11px] text-text-muted shrink-0"><%= @unassigned_sessions.size %></span>
+            <span class="ml-auto text-[11px] text-text-muted shrink-0"><%= @unassigned_total %></span>
           </summary>
           <div class="ml-[5px] border-l border-panel-border pl-4 mt-0.5">
             <% @unassigned_sessions.each do |session| %>
               <%= render "tree_session", session: session %>
+            <% end %>
+            <% if @unassigned_total > @unassigned_sessions.size %>
+              <%= link_to "+ #{@unassigned_total - @unassigned_sessions.size} more sessions", runs_path, class: "block py-1.5 px-2 text-[11px] font-bold text-primary no-underline hover:underline" %>
             <% end %>
           </div>
         </details>
