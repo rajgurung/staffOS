@@ -35,7 +35,11 @@ class Workstream < ApplicationRecord
   end
 
   def current_passport
-    run_passports.order(created_at: :desc).first
+    if run_passports.loaded?
+      run_passports.max_by(&:created_at)
+    else
+      run_passports.order(created_at: :desc).first
+    end
   end
 
   def total_sessions
