@@ -1,3 +1,11 @@
+# This seed file is DEMO DATA for local development only — it creates users with
+# well-known passwords and fake projects. It must never run against production.
+# Skip gracefully (not abort) so `db:prepare` on a fresh prod DB still succeeds.
+unless Rails.env.development?
+  puts "Skipping db/seeds.rb: development-only demo data (current env: #{Rails.env})."
+  return
+end
+
 # Default users
 User.find_or_create_by!(email: "raj@staffos.dev") { |u| u.name = "Raj Rathod"; u.password = "password123"; u.password_confirmation = "password123" }
 User.find_or_create_by!(email: "raj@local.dev") { |u| u.name = "Raj"; u.password = "staffos123"; u.password_confirmation = "staffos123" }
