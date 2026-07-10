@@ -1,12 +1,14 @@
 class SettingsController < ApplicationController
   def index
     @user = current_user
-    @projects = Project.all
-    llm_tokens = RunPassport.sum(:input_tokens) + RunPassport.sum(:output_tokens)
-    agent_tokens = AgentSession.all.sum { |s| s.metadata&.dig("tokens_used").to_i }
+    @projects = current_user.projects
+    sessions = AgentSession.where(project_id: @projects.select(:id))
+    passports = RunPassport.where(agent_session_id: sessions.select(:id))
+    llm_tokens = passports.sum(:input_tokens) + passports.sum(:output_tokens)
+    agent_tokens = sessions.sum { |s| s.metadata&.dig("tokens_used").to_i }
     @total_tokens = llm_tokens + agent_tokens
-    @total_sessions = AgentSession.count
-    @total_events = RunEvent.count
+    @total_sessions = sessions.count
+    @total_events = RunEvent.joins(:agent_session).where(agent_sessions: { project_id: @projects.select(:id) }).count
   end
 
   def update_profile

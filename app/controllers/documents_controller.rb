@@ -42,7 +42,7 @@ class DocumentsController < ApplicationController
   private
 
   def set_document
-    @document = Document.find(params[:id])
+    @document = Document.where(project: accessible_projects).find(params[:id])
   end
 
   def document_params

@@ -42,7 +42,7 @@ class MemoryItemsController < ApplicationController
   private
 
   def set_memory_item
-    @memory_item = MemoryItem.find(params[:id])
+    @memory_item = MemoryItem.where(project: accessible_projects).find(params[:id])
   end
 
   def memory_item_params

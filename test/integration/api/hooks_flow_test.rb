@@ -15,6 +15,19 @@ class Api::HooksFlowTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  test "ingestion targets the token's project, ignoring a spoofed project header" do
+    victim = make_project(name: "Victim", repo_name: "org/victim")
+
+    post "/api/v1/hooks/session_start",
+      params: { session_id: "spoof-1", branch_name: "feature/x" },
+      headers: { "Authorization" => "Bearer #{@token.token}", "X-StaffOS-Project" => victim.name }
+    assert_response :success
+
+    session = AgentSession.find_by(external_session_id: "spoof-1")
+    assert_equal @project, session.project, "session must land on the token's project, not the header's"
+    assert_equal 0, victim.agent_sessions.count
+  end
+
   test "a full session lifecycle produces a passport with a version" do
     sid = "session-abc"
 

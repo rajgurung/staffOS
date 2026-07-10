@@ -7,17 +7,19 @@ unless Rails.env.development?
 end
 
 # Default users
-User.find_or_create_by!(email: "raj@staffos.dev") { |u| u.name = "Raj Gurung"; u.password = "password123"; u.password_confirmation = "password123" }
+owner = User.find_or_create_by!(email: "raj@staffos.dev") { |u| u.name = "Raj Gurung"; u.password = "password123"; u.password_confirmation = "password123" }
 User.find_or_create_by!(email: "raj@local.dev") { |u| u.name = "Raj"; u.password = "staffos123"; u.password_confirmation = "staffos123" }
 
-# Projects
+# Projects (owned by the demo user)
 project = Project.find_or_create_by!(name: "AI Peer Review Pipeline") do |p|
+  p.user = owner
   p.repo_name = "staffos/ai-peer-review"
   p.tech_stack = "Ruby on Rails, PostgreSQL, Sidekiq, RSpec"
   p.risk_rules = { "auth_files" => "high", "payment_files" => "high", "infra_files" => "high", "no_tests" => "warning", "retry_logic" => "medium" }
 end
 
 Project.find_or_create_by!(name: "StaffOS Platform") do |p|
+  p.user = owner
   p.repo_name = "rajgurung/staffOS"
   p.tech_stack = "Ruby on Rails, PostgreSQL, Tailwind CSS, Hotwire"
   p.risk_rules = { "auth_files" => "high", "migration" => "high", "config" => "medium" }

@@ -42,7 +42,7 @@ class DecisionLogsController < ApplicationController
   private
 
   def set_decision_log
-    @decision_log = DecisionLog.find(params[:id])
+    @decision_log = DecisionLog.where(project: accessible_projects).find(params[:id])
   end
 
   def decision_log_params

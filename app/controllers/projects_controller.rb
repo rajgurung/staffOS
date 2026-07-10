@@ -6,7 +6,7 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: [:show, :edit, :update, :destroy, :hook_config]
 
   def index
-    @projects = Project.all.order(:name)
+    @projects = current_user.projects.order(:name)
   end
 
   def show
@@ -20,11 +20,11 @@ class ProjectsController < ApplicationController
   end
 
   def new
-    @project = Project.new
+    @project = current_user.projects.new
   end
 
   def create
-    @project = Project.new(project_params)
+    @project = current_user.projects.new(project_params)
     if @project.save
       redirect_to @project, notice: "Project created."
     else
@@ -55,7 +55,7 @@ class ProjectsController < ApplicationController
   private
 
   def set_project
-    @project = Project.find(params[:id])
+    @project = current_user.projects.find(params[:id])
   end
 
   def project_params

@@ -78,7 +78,9 @@ class RunPassportsController < ApplicationController
   end
 
   def set_passport
-    @passport = RunPassport.find(params[:id])
+    # RunPassport has no project_id; reach it through its agent session.
+    sessions = AgentSession.where(project: accessible_projects)
+    @passport = RunPassport.where(agent_session: sessions).find(params[:id])
   end
 
   def passport_json

@@ -8,4 +8,7 @@ class User < ApplicationRecord
   # go through SettingsController, password resets through :recoverable.
   devise :database_authenticatable,
          :recoverable, :rememberable, :validatable
+
+  # Deleting a user with projects is blocked — reassign the projects first.
+  has_many :projects, dependent: :restrict_with_error
 end

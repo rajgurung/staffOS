@@ -6,7 +6,7 @@ class AgentSessionsController < ApplicationController
   end
 
   def show
-    @session = AgentSession.find(params[:id])
+    @session = AgentSession.where(project: accessible_projects).find(params[:id])
     @events = @session.run_events.order(occurred_at: :asc)
     @passport = @session.run_passport
   end
