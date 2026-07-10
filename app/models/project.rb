@@ -1,4 +1,6 @@
 class Project < ApplicationRecord
+  belongs_to :user
+
   has_many :workstreams, dependent: :destroy
   has_many :agent_sessions, dependent: :destroy
   has_many :run_passports, through: :agent_sessions

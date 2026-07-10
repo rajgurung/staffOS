@@ -9,7 +9,7 @@
 
     <div data-dropdown-target="menu" class="hidden absolute top-10 left-0 w-64 border border-panel-border rounded-lg bg-white shadow-elevated z-50">
       <div class="p-2">
-        <% Project.order(:name).each do |project| %>
+        <% current_user.projects.order(:name).each do |project| %>
           <%= button_to switch_project_path(project_id: project.id), class: "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left text-[13px] transition-colors cursor-pointer border-0 #{project.id == current_project&.id ? 'bg-primary-soft text-primary-dark font-semibold' : 'bg-transparent text-text-soft hover:bg-bg hover:text-text-primary'}" do %>
             <span class="w-1.5 h-1.5 rounded-full <%= project.id == current_project&.id ? 'bg-primary' : 'bg-text-muted' %>"></span>
             <div class="min-w-0 flex-1">

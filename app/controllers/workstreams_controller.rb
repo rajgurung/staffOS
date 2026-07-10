@@ -36,7 +36,7 @@ class WorkstreamsController < ApplicationController
   private
 
   def set_workstream
-    @workstream = Workstream.find(params[:id])
+    @workstream = Workstream.where(project: accessible_projects).find(params[:id])
   end
 
   def workstream_params

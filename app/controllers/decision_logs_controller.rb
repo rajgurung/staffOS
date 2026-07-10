@@ -1,5 +1,6 @@
 class DecisionLogsController < ApplicationController
   before_action :set_decision_log, only: [:show, :edit, :update, :destroy]
+  before_action :require_current_project, only: :index
 
   def index
     @decision_logs = current_project.decision_logs.includes(:workstream).order(created_at: :desc)
@@ -42,7 +43,7 @@ class DecisionLogsController < ApplicationController
   private
 
   def set_decision_log
-    @decision_log = DecisionLog.find(params[:id])
+    @decision_log = DecisionLog.where(project: accessible_projects).find(params[:id])
   end
 
   def decision_log_params

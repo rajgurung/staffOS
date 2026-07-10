@@ -1,5 +1,6 @@
 class DocumentsController < ApplicationController
   before_action :set_document, only: [:show, :edit, :update, :destroy]
+  before_action :require_current_project, only: :index
 
   def index
     @documents = current_project.documents.includes(:workstream, :run_passport).order(created_at: :desc)
@@ -42,7 +43,7 @@ class DocumentsController < ApplicationController
   private
 
   def set_document
-    @document = Document.find(params[:id])
+    @document = Document.where(project: accessible_projects).find(params[:id])
   end
 
   def document_params

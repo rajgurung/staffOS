@@ -43,8 +43,9 @@ module ActiveSupport
     # Builders for the StaffOS domain graph. Tests construct records directly
     # rather than via fixtures so the relationships (project → workstream →
     # session → events → passport) stay explicit and easy to read.
-    def make_project(name: "Test Project", repo_name: "test/repo", **attrs)
-      Project.create!(name: name, repo_name: repo_name, **attrs)
+    def make_project(name: "Test Project", repo_name: "test/repo", user: nil, **attrs)
+      user ||= User.first || User.create!(email: "owner-#{SecureRandom.hex(4)}@test.dev", password: "password123")
+      Project.create!(name: name, repo_name: repo_name, user: user, **attrs)
     end
 
     def make_workstream(project: make_project, branch_name: "feature/test", **attrs)

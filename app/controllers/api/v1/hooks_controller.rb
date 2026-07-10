@@ -167,10 +167,7 @@ module Api
       end
 
       def resolve_project
-        @project ||= begin
-          name = request.headers["X-StaffOS-Project"] || params[:project_name] || "Default"
-          Project.find_by(name: name) || Project.first_or_create!(name: name, repo_name: detect_repo_name)
-        end
+        @project ||= token_project
       end
 
       def current_branch
@@ -180,16 +177,6 @@ module Api
           return branch unless branch.empty?
         end
         params[:branch_name] || "unknown"
-      end
-
-      def detect_repo_name
-        if params[:cwd].present?
-          remote = `cd #{params[:cwd].shellescape} && git remote get-url origin 2>/dev/null`.strip
-          if remote.match?(%r{[:/]([^/]+/[^/]+?)(?:\.git)?$})
-            return remote.match(%r{[:/]([^/]+/[^/]+?)(?:\.git)?$})[1]
-          end
-        end
-        "unknown"
       end
 
       def project_name

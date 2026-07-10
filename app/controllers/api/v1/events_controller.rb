@@ -27,10 +27,7 @@ module Api
           s.branch_name = params[:branch_name]
           s.status = "active"
           s.started_at = Time.current
-          s.project = Project.first_or_create!(
-            name: params[:project_name] || "Default",
-            repo_name: params[:repo_name] || "unknown"
-          )
+          s.project = token_project
         end
       end
 

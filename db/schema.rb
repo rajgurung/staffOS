@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_07_215047) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_10_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -134,6 +134,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_07_215047) do
     t.jsonb "risk_rules"
     t.text "tech_stack"
     t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["user_id"], name: "index_projects_on_user_id"
   end
 
   create_table "run_events", force: :cascade do |t|
@@ -215,6 +217,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_07_215047) do
   add_foreign_key "memory_items", "projects"
   add_foreign_key "memory_items", "workstreams"
   add_foreign_key "passport_versions", "run_passports"
+  add_foreign_key "projects", "users"
   add_foreign_key "run_events", "agent_sessions"
   add_foreign_key "run_events", "workstreams"
   add_foreign_key "run_passports", "agent_sessions"

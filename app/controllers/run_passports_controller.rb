@@ -1,5 +1,6 @@
 class RunPassportsController < ApplicationController
   before_action :set_passport, only: [:show, :run_council, :generate_document, :export, :set_review_mode]
+  before_action :require_current_project, only: :index
 
   def index
     @passports = current_project.run_passports.includes(:agent_session).order(created_at: :desc)
@@ -78,7 +79,9 @@ class RunPassportsController < ApplicationController
   end
 
   def set_passport
-    @passport = RunPassport.find(params[:id])
+    # RunPassport has no project_id; reach it through its agent session.
+    sessions = AgentSession.where(project: accessible_projects)
+    @passport = RunPassport.where(agent_session: sessions).find(params[:id])
   end
 
   def passport_json
