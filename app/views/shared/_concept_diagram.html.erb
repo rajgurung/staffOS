@@ -1,0 +1,30 @@
+<%# Concept diagram: nested containment anchored to git concepts %>
+<div class="rounded-lg border border-panel-border bg-bg/50 p-4">
+  <div class="flex items-baseline gap-2 mb-2">
+    <span class="inline-flex items-center h-[20px] px-2 rounded-md bg-text-primary text-white text-[10px] font-bold tracking-wide">PROJECT</span>
+    <span class="text-[11px] text-text-muted">= your repo</span>
+  </div>
+
+  <div class="rounded-lg border border-primary/30 bg-primary-soft/40 p-3 ml-3">
+    <div class="flex items-baseline gap-2 mb-2">
+      <span class="inline-flex items-center h-[20px] px-2 rounded-md bg-primary text-white text-[10px] font-bold tracking-wide">WORKSTREAM</span>
+      <span class="text-[11px] text-text-muted">= one git branch (<code class="text-primary">feature/…</code>)</span>
+    </div>
+
+    <div class="flex items-stretch gap-2 ml-3 max-sm:flex-col">
+      <div class="flex-1 rounded-lg border border-blue/30 bg-blue-soft p-2.5">
+        <span class="inline-flex items-center h-[18px] px-1.5 rounded bg-blue text-white text-[9px] font-bold tracking-wide mb-1">SESSION</span>
+        <p class="text-[11px] text-text-soft m-0 leading-snug">One Claude Code run. Edits, commands, tests — captured as events.</p>
+      </div>
+      <div class="grid place-items-center text-text-muted text-[11px] font-semibold shrink-0 max-sm:rotate-90 max-sm:justify-start max-sm:ml-6">→</div>
+      <div class="flex-1 rounded-lg border border-success/30 bg-success-soft p-2.5">
+        <span class="inline-flex items-center h-[18px] px-1.5 rounded bg-success text-white text-[9px] font-bold tracking-wide mb-1">PASSPORT</span>
+        <p class="text-[11px] text-text-soft m-0 leading-snug">Proof of that work: readiness %, risk level, files, test evidence.</p>
+      </div>
+    </div>
+
+    <p class="text-[10px] text-text-muted mt-2 mb-0 ml-3">Each new session stamps the passport again (v1 → v2 → v3…)</p>
+  </div>
+
+  <p class="text-[10px] text-text-muted mt-2 mb-0 ml-3">↑ When the branch merges, the workstream's docs &amp; decisions promote up to the project</p>
+</div>
