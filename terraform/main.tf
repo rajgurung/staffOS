@@ -90,3 +90,17 @@ resource "cloudflare_record" "staffos" {
   proxied = false # DNS only — Railway handles SSL
   ttl     = 1     # Auto
 }
+
+# Railway requires a TXT record to prove domain ownership before it will issue
+# the TLS cert and route traffic (certificateStatus stays VALIDATING_OWNERSHIP
+# without it). The railway provider doesn't expose this value, so it's taken
+# from the dashboard's DNS instructions for this domain. Recreating the custom
+# domain will change the token — update it from the dashboard if that happens.
+resource "cloudflare_record" "staffos_railway_verify" {
+  zone_id = var.cloudflare_zone_id
+  name    = "_railway-verify.staffos"
+  content = "railway-verify=78002dd81bb6f00d6adfcff47b5589810ab9903d81f870f0d3b1e4226f991ee6"
+  type    = "TXT"
+  proxied = false
+  ttl     = 1 # Auto
+}
