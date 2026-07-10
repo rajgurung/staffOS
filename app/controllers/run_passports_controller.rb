@@ -1,5 +1,6 @@
 class RunPassportsController < ApplicationController
   before_action :set_passport, only: [:show, :run_council, :generate_document, :export, :set_review_mode]
+  before_action :require_current_project, only: :index
 
   def index
     @passports = current_project.run_passports.includes(:agent_session).order(created_at: :desc)

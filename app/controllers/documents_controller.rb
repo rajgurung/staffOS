@@ -1,5 +1,6 @@
 class DocumentsController < ApplicationController
   before_action :set_document, only: [:show, :edit, :update, :destroy]
+  before_action :require_current_project, only: :index
 
   def index
     @documents = current_project.documents.includes(:workstream, :run_passport).order(created_at: :desc)

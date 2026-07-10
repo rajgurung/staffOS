@@ -30,4 +30,13 @@ class ApplicationController < ActionController::Base
   def accessible_projects
     current_user.projects
   end
+
+  # For pages that operate on the active project: a user who owns no projects
+  # has current_project == nil, so send them to create their first one instead
+  # of dereferencing nil into a 500.
+  def require_current_project
+    return if current_project
+
+    redirect_to new_project_path, notice: "Create your first project to get started."
+  end
 end

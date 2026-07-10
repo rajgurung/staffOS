@@ -57,6 +57,24 @@ class ProjectScopingTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "a user with no projects is redirected to create one, not 500" do
+    projectless = User.create!(email: "empty@test.dev", password: "password123")
+    sign_in projectless
+    [dashboard_path, documents_path, decision_logs_path, memory_items_path, runs_path, run_passports_path, risk_cockpit_path].each do |path|
+      get path
+      assert_redirected_to new_project_path, "#{path} should redirect a project-less user, got #{response.status}"
+    end
+  end
+
+  test "pages that tolerate no project render (not 500) for a project-less user" do
+    projectless = User.create!(email: "empty2@test.dev", password: "password123")
+    sign_in projectless
+    [workstreams_path, search_path, connect_path].each do |path|
+      get path
+      assert_response :success, "#{path} should render for a project-less user, got #{response.status}"
+    end
+  end
+
   test "cannot generate a token on another user's project" do
     sign_in @owner
     assert_no_difference -> { @other_project.api_tokens.count } do

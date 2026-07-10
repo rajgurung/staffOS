@@ -1,4 +1,6 @@
 class AgentSessionsController < ApplicationController
+  before_action :require_current_project, only: :index
+
   def index
     @sessions = current_project.agent_sessions.includes(:run_passport).order(started_at: :desc)
     @sessions = @sessions.where(status: params[:status]) if params[:status].present?

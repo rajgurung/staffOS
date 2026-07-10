@@ -1,7 +1,7 @@
 class DashboardController < ApplicationController
-  def index
-    return unless current_project
+  before_action :require_current_project, only: :index
 
+  def index
     sessions = current_project.agent_sessions
     passports = current_project.run_passports
 

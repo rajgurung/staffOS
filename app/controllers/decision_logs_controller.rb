@@ -1,5 +1,6 @@
 class DecisionLogsController < ApplicationController
   before_action :set_decision_log, only: [:show, :edit, :update, :destroy]
+  before_action :require_current_project, only: :index
 
   def index
     @decision_logs = current_project.decision_logs.includes(:workstream).order(created_at: :desc)

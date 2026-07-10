@@ -1,5 +1,6 @@
 class MemoryItemsController < ApplicationController
   before_action :set_memory_item, only: [:show, :edit, :update, :destroy]
+  before_action :require_current_project, only: :index
 
   def index
     @memory_items = current_project.memory_items.includes(:workstream).active.order(created_at: :desc)
