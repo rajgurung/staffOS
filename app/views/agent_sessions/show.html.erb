@@ -12,24 +12,26 @@
   </div>
 </div>
 
-<% if @passport %>
-  <%= link_to run_passport_path(@passport), class: "card block no-underline mb-6" do %>
-    <div class="relative p-5 flex justify-between items-center gap-4">
-      <div>
-        <p class="text-[13px] font-[800] m-0">
-          Contributed to the <span class="text-primary"><%= @session.workstream.branch_name %></span> passport
-        </p>
-        <p class="text-text-muted text-xs mt-1">
-          Based on <%= pluralize(@passport.sessions_count, "captured session") %> &middot; Full readiness detail lives on the passport
-        </p>
+<% if @passports.any? %>
+  <% @passports.each do |passport| %>
+    <%= link_to run_passport_path(passport), class: "card block no-underline mb-6" do %>
+      <div class="relative p-5 flex justify-between items-center gap-4">
+        <div>
+          <p class="text-[13px] font-[800] m-0">
+            Contributed to the <span class="text-primary"><%= passport.workstream.branch_name %></span> passport
+          </p>
+          <p class="text-text-muted text-xs mt-1">
+            Based on <%= pluralize(passport.sessions_count, "captured session") %> &middot; Full readiness detail lives on the passport
+          </p>
+        </div>
+        <div class="flex items-center gap-4 shrink-0">
+          <% if passport.risk_level.present? %>
+            <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
+          <% end %>
+          <span class="text-lg font-[850] tracking-[-0.05em]"><%= passport.readiness_score %>%</span>
+        </div>
       </div>
-      <div class="flex items-center gap-4 shrink-0">
-        <% if @passport.risk_level.present? %>
-          <%= status_pill(@passport.risk_level, color: @passport.risk_color.to_sym) %>
-        <% end %>
-        <span class="text-lg font-[850] tracking-[-0.05em]"><%= @passport.readiness_score %>%</span>
-      </div>
-    </div>
+    <% end %>
   <% end %>
 <% else %>
   <p class="text-text-muted text-sm mb-6">No passport applies to this session (unknown branch).</p>

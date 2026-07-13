@@ -158,12 +158,14 @@ module Api
           )
         end
 
-        # Mark session completed, then rebuild the branch's living passport and
-        # snapshot a version recording what this session changed.
+        # Mark session completed, then rebuild the living passport of EVERY
+        # branch this session touched — a session can hop branches mid-flight,
+        # and only rebuilding the stop-time branch would leave the others'
+        # passports stale. Each gets a version stamped with this session.
         session.update!(status: "completed", completed_at: Time.current)
 
-        if ws
-          passport = PassportGenerator.new(ws).generate!
+        session.touched_workstreams.find_each do |workstream|
+          passport = PassportGenerator.new(workstream).generate!
           passport.create_version!(trigger: "session_completed", agent_session: session)
         end
 

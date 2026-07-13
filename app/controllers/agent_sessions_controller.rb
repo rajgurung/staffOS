@@ -10,6 +10,8 @@ class AgentSessionsController < ApplicationController
   def show
     @session = AgentSession.where(project: accessible_projects).find(params[:id])
     @events = @session.run_events.order(occurred_at: :asc)
-    @passport = @session.workstream&.run_passport
+    # Every branch passport this session fed — sessions can hop branches.
+    @passports = @session.touched_workstreams.includes(:run_passport)
+      .filter_map(&:run_passport).uniq
   end
 end

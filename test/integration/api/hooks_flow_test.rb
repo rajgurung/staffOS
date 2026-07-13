@@ -77,6 +77,35 @@ class Api::HooksFlowTest < ActionDispatch::IntegrationTest
     assert_equal 0, event.payload["deletions"]
   end
 
+  test "a session that hops branches versions every passport it touched on stop" do
+    sid = "session-hopper"
+    post "/api/v1/hooks/session_start",
+      params: { session_id: sid, branch_name: "feature/a" }, headers: @headers
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: sid, branch_name: "feature/a", tool_name: "Edit",
+                tool_input: { file_path: "a.rb", additions: 3, deletions: 1 } },
+      headers: @headers
+    # user switches branches mid-session; events route to the new workstream
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: sid, branch_name: "feature/b", tool_name: "Edit",
+                tool_input: { file_path: "b.rb", additions: 5, deletions: 0 } },
+      headers: @headers
+    post "/api/v1/hooks/stop",
+      params: { session_id: sid, branch_name: "feature/b" }, headers: @headers
+    assert_response :success
+
+    session = @project.agent_sessions.find_by!(external_session_id: sid)
+    %w[feature/a feature/b].each do |branch|
+      ws = @project.workstreams.find_by!(branch_name: branch)
+      passport = ws.run_passport
+      assert_not_nil passport, "#{branch} must get a passport even though the session stopped elsewhere"
+      version = passport.passport_versions.find_by(agent_session: session)
+      assert_not_nil version, "#{branch}'s version must be stamped with the hopping session"
+    end
+    assert_equal ["a.rb"], @project.workstreams.find_by!(branch_name: "feature/a")
+      .run_passport.files_touched.map { |f| f["path"] }
+  end
+
   test "the same external session id under different tokens stays isolated per project" do
     other_project = make_project(name: "Other", repo_name: "org/other")
     other_token = other_project.api_tokens.create!(name: "cli")
