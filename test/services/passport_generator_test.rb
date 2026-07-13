@@ -69,6 +69,28 @@ class PassportGeneratorTest < ActiveSupport::TestCase
     assert_includes paths, "app/models/recent.rb"
   end
 
+  test "generate! preserves LLM enrichment across subsequent session stops" do
+    passport = PassportGenerator.new(@workstream).generate!
+    passport.update!(
+      intent: "LLM-written intent",
+      summary: "LLM-written summary",
+      summary_source: "llm",
+      missing_checks: (passport.missing_checks || []) +
+        [{ "check" => "Add idempotency spec", "severity" => "medium", "source" => "llm" }]
+    )
+
+    second_session = make_session(project: @workstream.project, workstream: @workstream)
+    add_event("file_edited", session: second_session, file: "app/models/widget.rb", additions: 10, deletions: 0)
+    rebuilt = PassportGenerator.new(@workstream).generate!
+
+    assert_equal "LLM-written intent", rebuilt.intent
+    assert_equal "LLM-written summary", rebuilt.summary
+    assert_equal "llm", rebuilt.summary_source
+    assert_includes rebuilt.missing_checks.map { |c| c["check"] }, "Add idempotency spec"
+    assert_includes rebuilt.files_touched.map { |f| f["path"] }, "app/models/widget.rb",
+      "deterministic fields must still refresh"
+  end
+
   test "apply_smart_summary! falls back to heuristics without an API key" do
     passport = PassportGenerator.new(@workstream).generate!
     without_llm do

@@ -14,14 +14,16 @@ class PassportGenerator
 
   # Full rebuild of the workstream's living passport from all its (windowed)
   # events. Upserts in place — never delete/recreate — so council reviews,
-  # documents, and version history survive every reassessment.
+  # documents, and version history survive every reassessment. Deterministic
+  # fields (risk, readiness, files, tests, checks) always refresh; narrative
+  # fields written by the LLM (intent, summary) and LLM-sourced checks are
+  # preserved — paid-for enrichment must survive later session stops.
   def generate!
     passport = @workstream.run_passport || @workstream.build_run_passport
+    llm_enriched = passport.persisted? && passport.summary_source == "llm"
+    carried_checks = llm_enriched ? Array(passport.missing_checks).select { |c| c["source"] == "llm" } : []
 
-    passport.assign_attributes(
-      intent: extract_intent,
-      summary: build_summary,
-      summary_source: "heuristic",
+    attrs = {
       risk_level: "Pending",
       readiness_score: 0,
       human_review_required: false,
@@ -29,7 +31,13 @@ class PassportGenerator
       files_touched: extract_files_touched,
       missing_checks: [],
       recommended_actions: []
-    )
+    }
+    unless llm_enriched
+      attrs[:intent] = extract_intent
+      attrs[:summary] = build_summary
+      attrs[:summary_source] = "heuristic"
+    end
+    passport.assign_attributes(attrs)
     passport.save!
 
     score = RiskScorer.new(passport).score
@@ -37,11 +45,18 @@ class PassportGenerator
       risk_level: score[:level],
       human_review_required: score[:human_review_required],
       readiness_score: calculate_readiness(passport, score),
-      missing_checks: generate_missing_checks(passport, score),
+      missing_checks: (generate_missing_checks(passport, score) + carried_checks).uniq { |c| c["check"] },
       recommended_actions: generate_recommendations(passport, score)
     )
 
     passport
+  rescue ActiveRecord::RecordNotUnique
+    # Two sessions stopping on the same branch at once can both build a fresh
+    # passport; the unique index makes the loser retry against the winner's row.
+    raise if @upsert_retried
+    @upsert_retried = true
+    @workstream.reload_run_passport
+    retry
   end
 
   # Smart-summary mode (SPEC §16): use a cheaper model to summarise the session
@@ -61,7 +76,9 @@ class PassportGenerator
     data = result&.text
     return false unless data.is_a?(Hash)
 
-    merged_checks = (passport.missing_checks || []) + Array(data["additional_checks"])
+    # Tag LLM-found checks so generate! can carry them across rebuilds.
+    llm_checks = Array(data["additional_checks"]).map { |c| c.merge("source" => "llm") }
+    merged_checks = (passport.missing_checks || []) + llm_checks
     passport.update!(
       intent: data["intent"].presence || passport.intent,
       summary: data["summary"].presence || passport.summary,
