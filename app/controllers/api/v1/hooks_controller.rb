@@ -171,12 +171,10 @@ module Api
       end
 
       def current_branch
-        # Try to detect from cwd if provided
-        if params[:cwd].present?
-          branch = `cd #{params[:cwd].shellescape} && git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
-          return branch unless branch.empty?
-        end
-        params[:branch_name] || "unknown"
+        # The branch is computed client-side (the server has no working tree) and
+        # sent as branch_name. The old cwd git shell-out here could never work
+        # remotely and was a command-injection surface.
+        params[:branch_name].presence || "unknown"
       end
 
       def project_name

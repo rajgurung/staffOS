@@ -10,7 +10,7 @@ require "fileutils"
 class StaffOSCLI
   CONFIG_FILE = ".staffos.yml"
   CREDENTIALS_FILE = File.expand_path("~/.staffos/credentials.yml")
-  VERSION = "0.1.1"
+  VERSION = "0.1.2"
 
   def initialize(args)
     @args = args
@@ -25,6 +25,7 @@ class StaffOSCLI
     when "passport"   then passport
     when "disconnect" then disconnect
     when "hook"       then generate_hook
+    when "capture"    then capture(@args[1])
     when "version"    then puts "staffos #{VERSION}"
     when "help", nil  then help
     else
@@ -195,83 +196,72 @@ class StaffOSCLI
     end
   end
 
+  # Claude Code hook events → StaffOS API endpoints.
+  HOOK_EVENTS = {
+    "SessionStart"     => "session_start",
+    "UserPromptSubmit" => "prompt",
+    "PreToolUse"       => "pre_tool",
+    "PostToolUse"      => "post_tool",
+    "Stop"             => "stop"
+  }.freeze
+
   def generate_hook
-    creds = load_credentials
-    config = load_config
+    # Command hooks (not HTTP): Claude Code pipes the event JSON to
+    # `staffos capture`, which enriches it with the local git branch — the
+    # server can't compute the branch, so this is where it must happen.
+    hooks = HOOK_EVENTS.map do |claude_event, api_event|
+      entry = { "hooks" => [{ "type" => "command", "command" => "staffos capture #{api_event}" }] }
+      entry["matcher"] = "Bash|Edit|Write|Read" if %w[PreToolUse PostToolUse].include?(claude_event)
+      [claude_event, [entry]]
+    end.to_h
 
-    endpoint = creds&.dig("endpoint") || "http://localhost:9090"
-    token = creds&.dig("token")
-    project_name = config&.dig("project_name") || "Default"
-
-    # Claude Code uses HTTP hooks - it POSTs the full event context
-    # (session_id, tool_name, tool_input, prompt, etc.) as JSON body automatically
-    headers = { "X-StaffOS-Project" => project_name }
-    headers["Authorization"] = "Bearer #{token}" if token
-
-    hook_config = {
-      "hooks" => {
-        "SessionStart" => [{
-          "hooks" => [{
-            "type" => "http",
-            "url" => "#{endpoint}/api/v1/hooks/session_start",
-            "headers" => headers,
-            "timeout" => 10
-          }]
-        }],
-        "UserPromptSubmit" => [{
-          "hooks" => [{
-            "type" => "http",
-            "url" => "#{endpoint}/api/v1/hooks/prompt",
-            "headers" => headers,
-            "timeout" => 10
-          }]
-        }],
-        "PreToolUse" => [{
-          "matcher" => "Bash|Edit|Write|Read",
-          "hooks" => [{
-            "type" => "http",
-            "url" => "#{endpoint}/api/v1/hooks/pre_tool",
-            "headers" => headers,
-            "timeout" => 10
-          }]
-        }],
-        "PostToolUse" => [{
-          "matcher" => "Bash|Edit|Write|Read",
-          "hooks" => [{
-            "type" => "http",
-            "url" => "#{endpoint}/api/v1/hooks/post_tool",
-            "headers" => headers,
-            "timeout" => 10
-          }]
-        }],
-        "Stop" => [{
-          "hooks" => [{
-            "type" => "http",
-            "url" => "#{endpoint}/api/v1/hooks/stop",
-            "headers" => headers,
-            "timeout" => 30
-          }]
-        }]
-      }
-    }
-
-    puts "\nClaude Code Hook Configuration (HTTP hooks)"
+    puts "\nClaude Code Hook Configuration (command hooks)"
     puts "─" * 40
-    puts "Claude Code will POST full event context as JSON automatically."
-    puts "No environment variable interpolation needed.\n\n"
+    puts "Claude Code pipes each event to `staffos capture`, which adds the git branch."
+    puts JSON.pretty_generate({ "hooks" => hooks })
 
-    json_output = JSON.pretty_generate(hook_config)
-    puts json_output
-
-    # Write to .claude/settings.json
     claude_dir = ".claude"
     settings_file = "#{claude_dir}/settings.json"
     FileUtils.mkdir_p(claude_dir)
-
     existing = File.exist?(settings_file) ? (JSON.parse(File.read(settings_file)) rescue {}) : {}
-    existing["hooks"] = hook_config["hooks"]
+    existing["hooks"] = hooks
     File.write(settings_file, JSON.pretty_generate(existing))
     puts "\nHook config written to #{settings_file}"
+  end
+
+  # Called by Claude Code's command hooks. Reads the event JSON on stdin, adds
+  # the current git branch, and POSTs to StaffOS. Never raises — a capture
+  # failure must not break the user's Claude Code session.
+  def capture(event)
+    creds = load_credentials
+    return unless creds && creds["token"] && event
+
+    data = JSON.parse($stdin.read) rescue {}
+    branch = `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
+    branch = "unknown" if branch.empty?
+
+    body = { "session_id" => data["session_id"], "branch_name" => branch }
+    case event
+    when "prompt"
+      body["prompt"] = data["prompt"]
+    when "pre_tool", "post_tool"
+      body["tool_name"]  = data["tool_name"]
+      body["tool_input"] = data["tool_input"]
+      body["tool_output"] = data["tool_response"] || data["tool_output"]
+    end
+
+    uri = URI("#{creds['endpoint']}/api/v1/hooks/#{event}")
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    http.open_timeout = 5
+    http.read_timeout = 10
+    req = Net::HTTP::Post.new(uri)
+    req["Authorization"] = "Bearer #{creds['token']}"
+    req["Content-Type"] = "application/json"
+    req.body = body.to_json
+    http.request(req)
+  rescue => e
+    warn "staffos capture error: #{e.message}" if ENV["STAFFOS_DEBUG"]
   end
 
   def help
