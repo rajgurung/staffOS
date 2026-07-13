@@ -1,10 +1,15 @@
-<header class="h-14 flex items-center justify-between gap-4 px-6 border-b border-panel-border bg-white max-lg:px-4">
+<header class="h-14 flex items-center justify-between gap-2 sm:gap-4 px-6 border-b border-panel-border bg-white max-lg:px-4">
+  <%# Hamburger (mobile only) %>
+  <button data-action="sidebar#open" class="lg:hidden shrink-0 w-8 h-8 -ml-1 rounded-md grid place-items-center text-text-soft hover:bg-bg" aria-label="Open menu">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+
   <%# Project Switcher %>
-  <div class="relative" data-controller="dropdown">
-    <button data-action="dropdown#toggle" class="h-8 flex items-center gap-2 px-3 border border-panel-border rounded-md bg-bg text-[13px] font-semibold text-text-primary cursor-pointer hover:border-panel-border-strong transition-colors">
-      <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
-      <%= current_project&.name || "Select Project" %>
-      <svg class="w-3.5 h-3.5 text-text-muted ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+  <div class="relative min-w-0" data-controller="dropdown">
+    <button data-action="dropdown#toggle" class="h-8 flex items-center gap-2 px-3 max-w-[45vw] sm:max-w-none border border-panel-border rounded-md bg-bg text-[13px] font-semibold text-text-primary cursor-pointer hover:border-panel-border-strong transition-colors">
+      <span class="w-1.5 h-1.5 rounded-full bg-success shrink-0"></span>
+      <span class="truncate"><%= current_project&.name || "Select Project" %></span>
+      <svg class="w-3.5 h-3.5 text-text-muted ml-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
     </button>
 
     <div data-dropdown-target="menu" class="hidden absolute top-10 left-0 w-64 border border-panel-border rounded-lg bg-white shadow-elevated z-50">
@@ -27,8 +32,8 @@
     </div>
   </div>
 
-  <%# Search %>
-  <div class="flex-1 max-w-md">
+  <%# Search (hidden on small screens to avoid crowding) %>
+  <div class="flex-1 max-w-md hidden md:block">
     <%= form_tag search_path, method: :get, class: "w-full" do %>
       <input name="q" value="<%= params[:q] %>"
         class="w-full h-8 px-3 border border-panel-border rounded-md bg-bg text-[13px] text-text-soft placeholder:text-text-muted outline-none focus:border-primary/40 focus:shadow-[0_0_0_3px_rgba(91,95,247,0.08)] transition-all"
@@ -37,7 +42,7 @@
   </div>
 
   <%# Actions %>
-  <div class="flex items-center gap-2">
+  <div class="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
     <button data-action="help#toggle" class="h-8 px-2 rounded-md border border-panel-border bg-bg flex items-center gap-1.5 text-text-muted hover:text-text-primary hover:border-panel-border-strong transition-colors cursor-pointer" title="Quick reference (Cmd+/)">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
       <kbd class="text-[9px] font-mono text-text-muted hidden sm:inline">?</kbd>
