@@ -40,20 +40,22 @@ class StaffOSCLI
 
   def login
     print "StaffOS API endpoint [http://localhost:9090]: "
-    endpoint = $stdin.gets.chomp
+    endpoint = $stdin.gets.strip
     endpoint = "http://localhost:9090" if endpoint.empty?
 
     print "API token: "
-    token = $stdin.gets.chomp
+    token = $stdin.gets.strip
 
     if token.empty?
       puts "Error: API token is required."
       exit 1
     end
 
+    endpoint = endpoint.sub(%r{/+\z}, "")
+
     # Verify connection
-    uri = URI("#{endpoint}/up")
     begin
+      uri = URI("#{endpoint}/up")
       res = Net::HTTP.get_response(uri)
       if res.code == "200"
         save_credentials(endpoint: endpoint, token: token)
@@ -87,7 +89,7 @@ class StaffOSCLI
     repo_name = detect_repo_name
 
     print "Project name [#{project_name}]: "
-    input = $stdin.gets.chomp
+    input = $stdin.gets.strip
     project_name = input unless input.empty?
 
     config = {
