@@ -6,9 +6,9 @@ unless ENV["COVERAGE"] == "false"
   require "simplecov"
   SimpleCov.start "rails" do
     enable_coverage :branch
-    add_filter "/test/"
-    add_filter "/config/"
-    add_group "Services", "app/services"
+    skip "/test/"
+    skip "/config/"
+    group "Services", "app/services"
   end
 end
 
