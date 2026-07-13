@@ -84,14 +84,14 @@ Rails 8 monolith, existing stack. Key moves:
    version (`trigger: council_completed`) with no triggering session.
 
 ## Success Criteria
-- [ ] DB enforces one passport per workstream; sessions have no passport FK.
-- [ ] A two-session workstream test proves cumulative assessment (files/tests from
+- [x] DB enforces one passport per workstream; sessions have no passport FK.
+- [x] A two-session workstream test proves cumulative assessment (files/tests from
       both sessions) and per-session version deltas.
-- [ ] Rolling-window test: events older than 7 days on `main` don't affect the
+- [x] Rolling-window test: events older than 7 days on `main` don't affect the
       assessment; the same events on a feature branch do.
-- [ ] A `branch_name: unknown` session produces events but no passport.
+- [x] A `branch_name: unknown` session produces events but no passport.
 - [ ] Existing prod passport and its document/decision/council links survive migration.
-- [ ] Full suite green; smoke tests cover the reworked session/workstream/passport pages.
+- [x] Full suite green; smoke tests cover the reworked session/workstream/passport pages.
 
 ## Risks and Unknowns
 - **View fallout** (~15 views read passports): mitigated by the existing

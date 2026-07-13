@@ -2,14 +2,14 @@ class WorkstreamsController < ApplicationController
   before_action :set_workstream, only: [:show, :edit, :update, :promote]
 
   def index
-    @workstreams = current_project ? current_project.workstreams.recent : Workstream.none
+    @workstreams = current_project ? current_project.workstreams.recent.includes(:run_passport, :project) : Workstream.none
     @workstreams = @workstreams.where(status: params[:status]) if params[:status].present?
   end
 
   def show
     @sessions = @workstream.agent_sessions.order(started_at: :desc)
-    @passport = @workstream.current_passport
-    @versions = @passport&.passport_versions&.latest_first || []
+    @passport = @workstream.run_passport
+    @versions = @passport&.passport_versions&.includes(:agent_session)&.latest_first || []
     @events = @workstream.run_events.order(occurred_at: :desc).limit(20)
     @documents = @workstream.documents
     @decisions = @workstream.decision_logs

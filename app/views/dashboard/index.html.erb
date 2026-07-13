@@ -115,8 +115,8 @@
           <div class="min-w-0 flex-1">
             <p class="text-[13px] font-semibold text-text-primary m-0 truncate"><%= truncate(passport.intent, length: 70) %></p>
             <p class="text-[11px] text-text-muted mt-0.5 m-0">
-              <%= passport.agent_session.agent_name %> &middot;
-              <span class="text-primary"><%= passport.agent_session.branch_name %></span> &middot;
+              <span class="text-primary"><%= passport.workstream.branch_name %></span> &middot;
+              <%= pluralize(passport.sessions_count, "session") %> &middot;
               <%= passport.files_count %> files &middot;
               <%= time_ago_in_words(passport.created_at) %> ago
             </p>

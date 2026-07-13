@@ -31,6 +31,7 @@
       <div class="readiness-ring w-[80px] h-[80px] mx-auto mb-2 grid place-items-center rounded-full">
         <span class="text-[22px] font-[850]"><%= @passport.readiness_score %>%</span>
       </div>
+      <p class="text-text-muted text-[11px] text-center m-0">Based on <%= pluralize(@passport.sessions_count, "captured session") %></p>
     <% end %>
 
     <%= card(title: "Risk Level") do %>
@@ -78,6 +79,9 @@
             </div>
             <p class="text-text-muted text-[11px] m-0">
               <%= version.trigger.titleize %> &middot; <%= version.created_at.strftime("%b %d, %H:%M") %>
+              <% if version.agent_session %>
+                &middot; <%= version.agent_session.agent_name %><% if version.duration_minutes %> (<%= version.duration_minutes %> min)<% end %>
+              <% end %>
             </p>
             <% if version.changes_from_previous.present? %>
               <p class="text-text-soft text-[11px] mt-1 m-0"><%= version.changes_from_previous %></p>
@@ -105,9 +109,7 @@
               </p>
             </div>
           </div>
-          <% if session.run_passport %>
-            <span class="text-[14px] font-[800] tracking-[-0.04em]"><%= session.run_passport.readiness_score %>%</span>
-          <% end %>
+          <%= status_pill(session.status&.titleize || "Unknown", color: session.status == "active" ? :success : :info) %>
         <% end %>
       <% end %>
       <% if @sessions.empty? %>

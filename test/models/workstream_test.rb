@@ -25,9 +25,8 @@ class WorkstreamTest < ActiveSupport::TestCase
   test "promote_to_project! merges artifacts to the project level" do
     project = make_project
     ws = make_workstream(project: project, branch_name: "feature/promote-me")
-    session = make_session(project: project, workstream: ws)
-    passport = session.create_run_passport!(intent: "x", summary: "y", risk_level: "Low",
-                                             readiness_score: 80, human_review_required: false)
+    make_session(project: project, workstream: ws)
+    passport = make_passport(workstream: ws, intent: "x", summary: "y")
     doc = Document.create!(project: project, workstream: ws, run_passport: passport,
                            document_type: "adr", title: "ADR")
 
@@ -36,5 +35,22 @@ class WorkstreamTest < ActiveSupport::TestCase
     assert_equal "merged", ws.reload.status
     assert_not_nil ws.merged_at
     assert_nil doc.reload.workstream_id
+  end
+
+  test "risk and readiness trends read passport versions in order" do
+    ws = make_workstream(branch_name: "feature/trends")
+    passport = make_passport(workstream: ws, risk_level: "High", readiness_score: 40)
+    passport.create_version!(trigger: "session_completed")
+    passport.update!(risk_level: "Medium", readiness_score: 70)
+    passport.create_version!(trigger: "reassessment")
+
+    assert_equal %w[High Medium], ws.risk_trend
+    assert_equal [40, 70], ws.readiness_trend
+  end
+
+  test "trends are empty for a workstream without a passport" do
+    ws = make_workstream(branch_name: "feature/bare")
+    assert_equal [], ws.risk_trend
+    assert_equal [], ws.readiness_trend
   end
 end

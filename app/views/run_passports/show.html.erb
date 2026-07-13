@@ -2,11 +2,12 @@
 <div class="flex justify-between items-start mb-4 max-lg:flex-col max-lg:gap-4">
   <div>
     <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">
-      Run Passport <%= status_pill("Completed") %>
+      Run Passport <%= status_pill("v#{@passport.current_version || 1}", color: :info) %>
     </h1>
     <p class="text-text-muted text-[13px]">
-      Captured from <span class="text-primary font-semibold"><%= @passport.agent_session.agent_name %></span>
-      &middot; <%= time_ago_in_words(@passport.created_at) %> ago
+      Living assessment of <%= link_to @passport.workstream.branch_name, workstream_path(@passport.workstream), class: "text-primary font-semibold no-underline" %>
+      &middot; based on <%= pluralize(@passport.sessions_count, "captured session") %>
+      &middot; updated <%= time_ago_in_words(@passport.updated_at) %> ago
     </p>
   </div>
 
@@ -39,7 +40,7 @@
     <div class="readiness-ring w-[104px] h-[104px] mx-auto mb-2.5 grid place-items-center rounded-full">
       <span class="text-[28px] font-[850]"><%= @passport.readiness_score %>%</span>
     </div>
-    <p class="text-text-muted text-[13px] text-center"><%= @passport.missing_checks&.length || 0 %> checks need attention.</p>
+    <p class="text-text-muted text-[13px] text-center">Based on <%= pluralize(@passport.sessions_count, "captured session") %>. <%= @passport.missing_checks&.length || 0 %> checks need attention.</p>
   <% end %>
 
   <%= card(title: "Risk Level", classes: "min-h-[146px] card-accent-warning") do %>
@@ -75,7 +76,7 @@
 
 <%# Middle Row: Timeline | Code Diff | Risk Analysis %>
 <div class="grid grid-cols-[1.15fr_1.6fr_1fr] gap-4 mb-4 max-xl:grid-cols-1">
-  <%= card(title: "Timeline", classes: "max-h-[420px] overflow-y-auto") do %>
+  <%= card(title: "Branch Activity", classes: "max-h-[420px] overflow-y-auto") do %>
     <div class="flex flex-col gap-[18px]">
       <% @events.each do |event| %>
         <div class="grid grid-cols-[74px_18px_1fr] gap-3 items-start">
@@ -141,6 +142,46 @@
     </div>
   <% end %>
 </div>
+
+<%# Version Timeline %>
+<%= card(title: "Version Timeline", classes: "mb-4") do %>
+  <% if @versions.any? %>
+    <div class="space-y-3">
+      <% @versions.each do |version| %>
+        <div class="p-3 rounded-md border border-panel-border <%= version == @versions.first ? 'bg-primary-soft/50 border-primary/10' : 'bg-bg/50' %>">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-2">
+              <span class="text-[13px] font-[700]">v<%= version.version_number %></span>
+              <%= status_pill(version.risk_level, color: version.risk_color.to_sym) %>
+              <% delta = version.readiness_delta %>
+              <% if delta && delta != 0 %>
+                <span class="text-[11px] font-semibold <%= delta > 0 ? 'text-success' : 'text-danger' %>">
+                  <%= delta > 0 ? "+#{delta}" : delta %>%
+                </span>
+              <% end %>
+            </div>
+            <span class="text-[18px] font-[800] tracking-[-0.04em]"><%= version.readiness_score %>%</span>
+          </div>
+          <p class="text-text-muted text-[11px] m-0">
+            <% if version.agent_session %>
+              Session: <span class="font-semibold text-text-soft"><%= version.agent_session.agent_name %></span>
+              &middot; <%= version.agent_session.started_at&.strftime("%b %d, %H:%M") %>
+              <% if version.duration_minutes %>&middot; <%= version.duration_minutes %> min<% end %>
+            <% else %>
+              <%= version.trigger.titleize %> &middot; no session
+            <% end %>
+            &middot; <%= version.created_at.strftime("%b %d, %H:%M") %>
+          </p>
+          <% if version.changes_from_previous.present? %>
+            <p class="text-text-soft text-[11px] mt-1 m-0"><%= version.changes_from_previous %></p>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-text-muted text-[13px] text-center py-4 m-0">No versions recorded yet. Versions are created when sessions complete or reviews run.</p>
+  <% end %>
+<% end %>
 
 <%# AI Council %>
 <%= render "council" %>

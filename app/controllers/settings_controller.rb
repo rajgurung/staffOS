@@ -3,7 +3,7 @@ class SettingsController < ApplicationController
     @user = current_user
     @projects = current_user.projects
     sessions = AgentSession.where(project_id: @projects.select(:id))
-    passports = RunPassport.where(agent_session_id: sessions.select(:id))
+    passports = RunPassport.joins(:workstream).where(workstreams: { project_id: @projects.select(:id) })
     llm_tokens = passports.sum(:input_tokens) + passports.sum(:output_tokens)
     agent_tokens = sessions.sum { |s| s.metadata&.dig("tokens_used").to_i }
     @total_tokens = llm_tokens + agent_tokens

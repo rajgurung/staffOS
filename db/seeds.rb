@@ -27,15 +27,8 @@ end
 
 ApiToken.find_or_create_by!(name: "CLI Token") { |t| t.project = project }
 
-# Helper to seed a workstream with session, events, passport, and version
-def seed_workstream(project:, branch_name:, title:, description:, status:, merged_at: nil,
-                    session_id:, started_ago:, duration_minutes:, model: "claude-sonnet-4-20250514", tokens:,
-                    intent:, summary:, risk_level:, readiness:, review_required:, review_mode: "passive",
-                    test_summary:, files_touched:, missing_checks:, recommended_actions:, events_data:,
-                    run_council: false)
-  ws = Workstream.find_or_create_for_branch(project: project, branch_name: branch_name)
-  ws.update!(title: title, description: description, status: status, merged_at: merged_at)
-
+# Helper to seed an agent session and its run events
+def seed_session(project:, ws:, branch_name:, session_id:, started_ago:, duration_minutes:, model:, tokens:, events_data:)
   session = AgentSession.find_or_create_by!(external_session_id: session_id) do |s|
     s.project = project
     s.workstream = ws
@@ -57,8 +50,25 @@ def seed_workstream(project:, branch_name:, title:, description:, status:, merge
     end
   end
 
-  passport = RunPassport.find_or_create_by!(agent_session: session) do |p|
-    p.workstream = ws
+  session
+end
+
+# Helper to seed a workstream with sessions, events, passport, and versions.
+# Pass prior_session (session fields plus summary/risk_level/readiness/missing_checks)
+# to seed an earlier session and a v1 passport version showing progression.
+def seed_workstream(project:, branch_name:, title:, description:, status:, merged_at: nil,
+                    session_id:, started_ago:, duration_minutes:, model: "claude-sonnet-4-20250514", tokens:,
+                    intent:, summary:, risk_level:, readiness:, review_required:, review_mode: "passive",
+                    test_summary:, files_touched:, missing_checks:, recommended_actions:, events_data:,
+                    prior_session: nil, run_council: false)
+  ws = Workstream.find_or_create_for_branch(project: project, branch_name: branch_name)
+  ws.update!(title: title, description: description, status: status, merged_at: merged_at)
+
+  session = seed_session(project: project, ws: ws, branch_name: branch_name, session_id: session_id,
+                         started_ago: started_ago, duration_minutes: duration_minutes, model: model,
+                         tokens: tokens, events_data: events_data)
+
+  passport = RunPassport.find_or_create_by!(workstream: ws) do |p|
     p.intent = intent
     p.summary = summary
     p.risk_level = risk_level
@@ -71,9 +81,22 @@ def seed_workstream(project:, branch_name:, title:, description:, status:, merge
     p.recommended_actions = recommended_actions
   end
 
-  passport.create_version!(trigger: "session_completed") if passport.passport_versions.empty?
+  if passport.passport_versions.empty?
+    if prior_session
+      early = seed_session(project: project, ws: ws, branch_name: branch_name, model: model,
+                           session_id: prior_session[:session_id], started_ago: prior_session[:started_ago],
+                           duration_minutes: prior_session[:duration_minutes], tokens: prior_session[:tokens],
+                           events_data: prior_session[:events_data])
+      # Snapshot v1 with the earlier session's assessment, then restore the current values for v2.
+      passport.update!(summary: prior_session[:summary], risk_level: prior_session[:risk_level],
+                       readiness_score: prior_session[:readiness], missing_checks: prior_session[:missing_checks])
+      passport.create_version!(trigger: "session_completed", agent_session: early)
+      passport.update!(summary: summary, risk_level: risk_level, readiness_score: readiness, missing_checks: missing_checks)
+    end
+    passport.create_version!(trigger: "session_completed", agent_session: session)
+  end
 
-  if run_council
+  if run_council && passport.passport_versions.where(trigger: "council_completed").none?
     CouncilRunner.new(passport).run!
     passport.create_version!(trigger: "council_completed")
   end
@@ -155,6 +178,32 @@ ws1 = seed_workstream(
     { event_type: "agent_response", offset: 600, payload: { summary: "Hardened retry logic with exponential backoff, added idempotency key check, improved structured logging with correlation IDs." } },
     { event_type: "session_completed", offset: 620, payload: { duration_seconds: 620, files_changed: 7 } }
   ],
+  # Earlier session on the same branch: first pass had no tests and no idempotency,
+  # so v1 of the passport reads 45/High before the follow-up session brings it to 72/Medium.
+  prior_session: {
+    session_id: "demo-session-000", started_ago: 1.day.ago, duration_minutes: 6, tokens: 21400,
+    summary: "First pass at the retry path: replaced the fixed retry count with exponential backoff in the callback handler. No new tests yet, idempotency handling still missing.",
+    risk_level: "High", readiness: 45,
+    missing_checks: [
+      { "check" => "No tests for new retry behaviour", "severity" => "high" },
+      { "check" => "Duplicate callback processing not prevented", "severity" => "high" },
+      { "check" => "Idempotency edge case test for concurrent callbacks", "severity" => "high" },
+      { "check" => "Correlation ID propagation to downstream services", "severity" => "medium" },
+      { "check" => "Retry behaviour not captured in an ADR", "severity" => "medium" },
+      { "check" => "Lint check not run", "severity" => "low" }
+    ],
+    events_data: [
+      { event_type: "session_started", offset: 0, payload: { branch: "rr-553-ai-hardening", model: "claude-sonnet-4-20250514" } },
+      { event_type: "prompt_submitted", offset: 20, payload: { prompt: "Replace the fixed retry count in the inference callback handler with exponential backoff." } },
+      { event_type: "file_read", offset: 50, payload: { file: "app/services/inference_callback_handler.rb", lines: 130 } },
+      { event_type: "file_edited", offset: 140, payload: { file: "app/services/inference_callback_handler.rb", additions: 19, deletions: 6 } },
+      { event_type: "command_run", offset: 220, payload: { command: "bundle exec rspec spec/services/inference_callback_handler_spec.rb", exit_code: 1, examples: 9, failures: 2 } },
+      { event_type: "file_edited", offset: 300, payload: { file: "app/services/inference_callback_handler.rb", additions: 4, deletions: 2 } },
+      { event_type: "command_run", offset: 330, payload: { command: "bundle exec rspec spec/services/inference_callback_handler_spec.rb", exit_code: 0, examples: 9, failures: 0 } },
+      { event_type: "agent_response", offset: 350, payload: { summary: "Replaced fixed retry with exponential backoff. Idempotency and new tests still outstanding." } },
+      { event_type: "session_completed", offset: 360, payload: { duration_seconds: 360, files_changed: 1 } }
+    ]
+  },
   run_council: true
 )
 

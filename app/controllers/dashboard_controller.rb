@@ -9,7 +9,7 @@ class DashboardController < ApplicationController
     @total_passports = passports.count
     @review_required = passports.where(human_review_required: true).count
     @active_runs = sessions.where(status: "active").order(started_at: :desc).limit(5)
-    @recent_passports = passports.includes(:agent_session).order(created_at: :desc).limit(5)
+    @recent_passports = passports.includes(:workstream).order(created_at: :desc).limit(5)
     @recent_events = RunEvent.joins(:agent_session).where(agent_sessions: { project_id: current_project.id }).order(occurred_at: :desc).limit(12)
 
     @high_risk = passports.where(risk_level: "High").count

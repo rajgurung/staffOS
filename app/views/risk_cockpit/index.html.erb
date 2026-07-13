@@ -66,7 +66,7 @@
         <div class="flex justify-between items-center">
           <div>
             <p class="text-text-primary font-bold text-sm"><%= truncate(passport.intent, length: 60) %></p>
-            <p class="text-text-muted text-xs mt-1"><%= passport.agent_session.branch_name %> &middot; <%= passport.files_count %> files &middot; <%= time_ago_in_words(passport.created_at) %> ago</p>
+            <p class="text-text-muted text-xs mt-1"><%= passport.workstream.branch_name %> &middot; <%= pluralize(passport.sessions_count, "session") %> &middot; <%= passport.files_count %> files &middot; <%= time_ago_in_words(passport.created_at) %> ago</p>
           </div>
           <div class="flex items-center gap-3">
             <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
