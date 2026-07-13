@@ -28,6 +28,55 @@ class Api::HooksFlowTest < ActionDispatch::IntegrationTest
     assert_equal 0, victim.agent_sessions.count
   end
 
+  test "post_tool prefers client-computed privacy metadata over deriving from source" do
+    sid = "session-sanitized"
+    post "/api/v1/hooks/session_start",
+      params: { session_id: sid, branch_name: "feature/priv" }, headers: @headers
+
+    # Privacy-enforcing CLI: no old_string/new_string/content, counts precomputed.
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: sid, branch_name: "feature/priv", tool_name: "Edit",
+                tool_input: { file_path: "app/models/user.rb", additions: 7, deletions: 2 } },
+      headers: @headers
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: sid, branch_name: "feature/priv", tool_name: "Read",
+                tool_input: { file_path: "app/models/user.rb", lines: 42 } },
+      headers: @headers
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: sid, branch_name: "feature/priv", tool_name: "Bash",
+                tool_input: { command: "bin/rails test", exit_code: 1 } },
+      headers: @headers
+    assert_response :success
+
+    session = @project.agent_sessions.find_by!(external_session_id: sid)
+    edit = session.run_events.find_by!(event_type: "file_edited")
+    assert_equal 7, edit.payload["additions"]
+    assert_equal 2, edit.payload["deletions"]
+    assert_nil edit.payload.dig("tool_input", "old_string")
+
+    read = session.run_events.find_by!(event_type: "file_read")
+    assert_equal 42, read.payload["lines"]
+
+    bash = session.run_events.find_by!(event_type: "command_run")
+    assert_equal 1, bash.payload["exit_code"]
+  end
+
+  test "post_tool still derives counts from source for full-capture clients" do
+    sid = "session-fullcap"
+    post "/api/v1/hooks/session_start",
+      params: { session_id: sid, branch_name: "feature/full" }, headers: @headers
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: sid, branch_name: "feature/full", tool_name: "Write",
+                tool_input: { file_path: "lib/thing.rb", content: "a\nb\nc" } },
+      headers: @headers
+    assert_response :success
+
+    event = @project.agent_sessions.find_by!(external_session_id: sid)
+      .run_events.find_by!(event_type: "file_edited")
+    assert_equal 3, event.payload["additions"]
+    assert_equal 0, event.payload["deletions"]
+  end
+
   test "the same external session id under different tokens stays isolated per project" do
     other_project = make_project(name: "Other", repo_name: "org/other")
     other_token = other_project.api_tokens.create!(name: "cli")
