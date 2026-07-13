@@ -133,13 +133,13 @@ module Api
           }.compact
         )
 
-        # Mark session completed and generate passport
+        # Mark session completed, then rebuild the branch's living passport and
+        # snapshot a version recording what this session changed.
         session.update!(status: "completed", completed_at: Time.current)
 
         if ws
-          passport = PassportGenerator.new(session).generate!
-          passport.update!(workstream: ws) unless passport.workstream_id
-          passport.create_version!(trigger: "session_completed")
+          passport = PassportGenerator.new(ws).generate!
+          passport.create_version!(trigger: "session_completed", agent_session: session)
         end
 
         render json: {}

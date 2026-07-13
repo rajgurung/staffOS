@@ -2,10 +2,16 @@ module Api
   module V1
     class SessionsController < Api::BaseController
       def complete
-        session = AgentSession.find_by!(external_session_id: params[:session_id])
+        session = token_project.agent_sessions.find_by!(external_session_id: params[:session_id])
         session.update!(status: "completed", completed_at: Time.current)
 
-        passport = PassportGenerator.new(session).generate!
+        unless session.workstream
+          return render json: { error: "session has no workstream (unknown branch); no passport generated" },
+            status: :unprocessable_entity
+        end
+
+        passport = PassportGenerator.new(session.workstream).generate!
+        passport.create_version!(trigger: "session_completed", agent_session: session)
 
         render json: {
           passport_id: passport.id,

@@ -1,7 +1,7 @@
 class RunPassport < ApplicationRecord
-  belongs_to :agent_session
-  belongs_to :workstream, optional: true
-  has_one :project, through: :agent_session
+  belongs_to :workstream
+  has_one :project, through: :workstream
+  has_many :agent_sessions, through: :workstream
   has_many :documents, dependent: :nullify
   has_many :decision_logs, dependent: :nullify
   has_many :council_reviews, dependent: :destroy
@@ -9,7 +9,7 @@ class RunPassport < ApplicationRecord
 
   REVIEW_MODES = %w[passive smart_summary full_council].freeze
 
-  def create_version!(trigger:)
+  def create_version!(trigger:, agent_session: nil)
     next_version = (current_version || 0) + 1
     prev = passport_versions.order(version_number: :desc).first
 
@@ -33,6 +33,7 @@ class RunPassport < ApplicationRecord
       missing_checks: missing_checks,
       risk_signals: {},
       trigger: trigger,
+      agent_session: agent_session,
       changes_from_previous: changes_desc
     )
 
@@ -103,8 +104,7 @@ class RunPassport < ApplicationRecord
     (files_touched || []).sum { |f| f["deletions"].to_i }
   end
 
-  def duration_minutes
-    return nil unless agent_session.started_at && agent_session.completed_at
-    ((agent_session.completed_at - agent_session.started_at) / 60).round(1)
+  def sessions_count
+    agent_sessions.count
   end
 end

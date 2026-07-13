@@ -21,7 +21,7 @@ class DocumentGenerator
       run_passport: @passport,
       status: "draft",
       title: "Decision: #{extract_topic}",
-      context: "During AI-assisted coding session on branch #{@passport.agent_session.branch_name}, " \
+      context: "During AI-assisted work on branch #{@passport.workstream.branch_name}, " \
                "the following change was made: #{@passport.intent}",
       decision: @passport.summary.to_s.split(".").first.to_s + ".",
       rationale: "Identified during automated code review. #{@passport.risk_level} risk level. " \
@@ -67,7 +67,7 @@ class DocumentGenerator
 
       #{@passport.intent}
 
-      This change was made during an AI-assisted coding session on branch `#{@passport.agent_session.branch_name}` using #{@passport.agent_session.agent_name}.
+      This change was made during AI-assisted work on branch `#{@passport.workstream.branch_name}` across #{@passport.sessions_count} captured sessions.
 
       ## Decision
 

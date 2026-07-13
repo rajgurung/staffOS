@@ -103,7 +103,7 @@ class CouncilRunner
   def council_prompt
     <<~PROMPT
       Intent: #{@passport.intent}
-      Branch: #{@passport.agent_session.branch_name}
+      Branch: #{@passport.workstream.branch_name}
       Deterministic risk level: #{@passport.risk_level}
 
       Files touched:
