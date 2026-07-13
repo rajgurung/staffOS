@@ -401,7 +401,11 @@ class StaffOSCLI
     input = (input || {}).dup
     privacy = (load_config || {})["privacy"] || {}
     redact = privacy.fetch("redact_secrets", true)
-    input["command"] = redact_secrets(input["command"]) if redact && input["command"].is_a?(String)
+    if redact
+      input["command"] = redact_secrets(input["command"]) if input["command"].is_a?(String)
+      # Command *output* is where secrets usually live (cat .env, printenv).
+      output = redact_secrets(output) if output.is_a?(String)
+    end
 
     return [input, output] if privacy["upload_source"] == true
 
@@ -417,7 +421,8 @@ class StaffOSCLI
     when "Read"
       input["lines"] = output.to_s.lines.count if output
     when "Bash"
-      input["exit_code"] = output.to_s.match?(/exit code/i) ? 1 : 0
+      # Only post_tool has output; pre_tool must not fib an exit code.
+      input["exit_code"] = output.to_s.match?(/exit code/i) ? 1 : 0 if output
     end
 
     [input, nil]
