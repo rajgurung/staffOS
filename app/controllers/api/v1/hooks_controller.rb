@@ -93,20 +93,30 @@ module Api
 
         payload = { tool_name: tool }.compact
 
+        # Privacy-enforcing CLIs (0.4.0+) strip source client-side and send the
+        # derived counts instead; prefer those, fall back to deriving here for
+        # older CLIs and opted-in full-capture projects.
         case tool
         when "Read"
           payload[:file] = input["file_path"]
-          payload[:lines] = output.to_s.lines.count if output
+          payload[:lines] = input["lines"]&.to_i || (output.to_s.lines.count if output)
         when "Edit", "Write"
           payload[:file] = input["file_path"]
-          if input["old_string"] && input["new_string"]
+          if input["additions"] || input["deletions"]
+            payload[:additions] = input["additions"].to_i
+            payload[:deletions] = input["deletions"].to_i
+          elsif input["old_string"] && input["new_string"]
             payload[:additions] = input["new_string"].to_s.lines.count
             payload[:deletions] = input["old_string"].to_s.lines.count
+          elsif tool == "Write" && input["content"]
+            payload[:additions] = input["content"].to_s.lines.count
+            payload[:deletions] = 0
           end
         when "Bash"
           payload[:command] = input["command"]
-          payload[:exit_code] = output.to_s.match?(/exit code/i) ? 1 : 0
+          payload[:exit_code] = input["exit_code"]&.to_i || (output.to_s.match?(/exit code/i) ? 1 : 0)
         end
+        payload.compact!
 
         session.run_events.create!(
           event_type: event_type,

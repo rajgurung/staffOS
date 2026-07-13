@@ -10,7 +10,7 @@ require "fileutils"
 class StaffOSCLI
   CONFIG_FILE = ".staffos.yml"
   CREDENTIALS_FILE = File.expand_path("~/.staffos/credentials.yml")
-  VERSION = "0.3.0"
+  VERSION = "0.4.0"
 
   def initialize(args)
     @args = args
@@ -260,9 +260,10 @@ class StaffOSCLI
     when "prompt"
       body["prompt"] = data["prompt"]
     when "pre_tool", "post_tool"
+      input, output = apply_privacy(data["tool_name"], data["tool_input"], data["tool_response"] || data["tool_output"])
       body["tool_name"]  = data["tool_name"]
-      body["tool_input"] = data["tool_input"]
-      body["tool_output"] = data["tool_response"] || data["tool_output"]
+      body["tool_input"] = input
+      body["tool_output"] = output
     when "stop"
       snapshot = branch_snapshot(branch)
       body["branch_snapshot"] = snapshot if snapshot
@@ -389,6 +390,50 @@ class StaffOSCLI
 
     return nil if files.empty?
     { "base_branch" => default, "merge_base" => base, "files" => files }
+  end
+
+  # Enforce the project's privacy config (SPEC §17): by default source never
+  # leaves the machine — content-bearing fields are replaced client-side with
+  # the line-count metadata the server needs. Setting upload_source: true in
+  # .staffos.yml opts the project into full capture (richer AI review).
+  # Secrets are redacted from commands either way unless redact_secrets: false.
+  def apply_privacy(tool, input, output)
+    input = (input || {}).dup
+    privacy = (load_config || {})["privacy"] || {}
+    redact = privacy.fetch("redact_secrets", true)
+    input["command"] = redact_secrets(input["command"]) if redact && input["command"].is_a?(String)
+
+    return [input, output] if privacy["upload_source"] == true
+
+    case tool
+    when "Edit"
+      input["additions"] = input["new_string"].to_s.lines.count
+      input["deletions"] = input["old_string"].to_s.lines.count
+      input.delete("old_string")
+      input.delete("new_string")
+    when "Write"
+      input["additions"] = input["content"].to_s.lines.count
+      input.delete("content")
+    when "Read"
+      input["lines"] = output.to_s.lines.count if output
+    when "Bash"
+      input["exit_code"] = output.to_s.match?(/exit code/i) ? 1 : 0
+    end
+
+    [input, nil]
+  end
+
+  SECRET_PATTERNS = [
+    /((?:password|passwd|secret|token|api[_-]?key|authorization)\s*[=:]\s*)(?:bearer\s+)?\S+/i,
+    /(bearer\s+)[a-z0-9\-._~+\/]{8,}=*/i,
+    /(:\/\/[^\s:\/@]+:)[^@\s]+@/i,
+    /\b[0-9a-f]{32,}\b/i
+  ].freeze
+
+  def redact_secrets(text)
+    SECRET_PATTERNS.reduce(text) do |t, pattern|
+      t.gsub(pattern) { $1 ? "#{$1}[REDACTED]" : "[REDACTED]" }
+    end
   end
 
   # Renames come back as "app/{models => services}/user.rb" (shared-prefix
