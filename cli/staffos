@@ -106,6 +106,8 @@ class StaffOSCLI
     File.write(CONFIG_FILE, config.to_yaml)
     puts "Created #{CONFIG_FILE}"
 
+    ignore_local_config
+
     generate_hook
     puts "\nProject initialized. Start Claude Code and events will be captured."
   end
@@ -311,6 +313,20 @@ class StaffOSCLI
     FileUtils.mkdir_p(dir)
     File.write(CREDENTIALS_FILE, { "endpoint" => endpoint, "token" => token }.to_yaml)
     File.chmod(0600, CREDENTIALS_FILE)
+  end
+
+  # Keep the local project config out of version control (it's per-user).
+  def ignore_local_config
+    entry = File.basename(CONFIG_FILE)
+    existing = File.exist?(".gitignore") ? File.read(".gitignore") : ""
+    return if existing.split("\n").map(&:strip).include?(entry)
+
+    File.open(".gitignore", "a") do |f|
+      f.puts "" unless existing.empty? || existing.end_with?("\n")
+      f.puts "# StaffOS local config"
+      f.puts entry
+    end
+    puts "Added #{entry} to .gitignore"
   end
 
   def load_credentials
