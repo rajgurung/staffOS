@@ -133,6 +133,19 @@ module Api
           }.compact
         )
 
+        # The CLI sends what git says is actually on the branch (paths + line
+        # counts vs the merge-base). Recorded before the passport rebuild so
+        # the generator can score coverage against it.
+        if ws && params[:branch_snapshot].present?
+          session.run_events.create!(
+            event_type: "branch_snapshot",
+            occurred_at: Time.current,
+            workstream: ws,
+            source: "claude_code",
+            payload: params[:branch_snapshot].to_unsafe_h
+          )
+        end
+
         # Mark session completed, then rebuild the branch's living passport and
         # snapshot a version recording what this session changed.
         session.update!(status: "completed", completed_at: Time.current)
