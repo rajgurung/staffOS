@@ -19,13 +19,17 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="font-sans text-text-primary antialiased" data-controller="help">
+  <body class="font-sans text-text-primary antialiased overflow-x-hidden" data-controller="help sidebar">
+    <%# Mobile drawer backdrop %>
+    <div data-sidebar-target="backdrop" data-action="click->sidebar#close"
+         class="hidden fixed inset-0 z-30 bg-black/30 backdrop-blur-sm lg:hidden"></div>
+
     <div class="grid grid-cols-[260px_1fr] min-h-screen max-lg:grid-cols-1">
       <%= render "shared/sidebar" %>
 
       <main class="min-w-0">
         <%= render "shared/topbar" %>
-        <section class="p-7">
+        <section class="p-7 max-lg:p-4">
           <% if notice %>
             <div class="mb-4 p-3 rounded-sm bg-success-soft border border-success/20 text-success text-sm font-semibold" data-controller="flash">
               <%= notice %>

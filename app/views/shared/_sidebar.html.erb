@@ -1,4 +1,9 @@
-<aside class="sticky top-0 h-screen py-5 px-3 border-r border-panel-border bg-white max-lg:hidden flex flex-col">
+<aside data-sidebar-target="panel" data-action="click->sidebar#closeOnNavigate"
+       class="flex flex-col bg-white border-r border-panel-border py-5 px-3
+              transition-transform duration-200
+              lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
+              max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-40 max-lg:w-[260px] max-lg:shadow-elevated
+              -translate-x-full">
   <div class="flex items-center gap-2.5 px-3 mb-8">
     <%= link_to root_path, class: "flex items-center gap-2.5 no-underline" do %>
       <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-purple grid place-items-center text-white text-xs font-bold shadow-primary">S</span>
