@@ -77,6 +77,58 @@ class Api::HooksFlowTest < ActionDispatch::IntegrationTest
     assert_equal 0, event.payload["deletions"]
   end
 
+  test "transcript-summarizer sessions are demoted to noise and never touch passports" do
+    sid = "session-noise"
+    post "/api/v1/hooks/session_start",
+      params: { session_id: sid, branch_name: "main" }, headers: @headers
+    post "/api/v1/hooks/prompt",
+      params: { session_id: sid, branch_name: "main",
+                prompt: "=== Transcript of a conversation between a human and Claude Code ===\n[Human]: hi" },
+      headers: @headers
+    post "/api/v1/hooks/stop",
+      params: { session_id: sid, branch_name: "main" }, headers: @headers
+    assert_response :success
+
+    session = @project.agent_sessions.find_by!(external_session_id: sid)
+    assert_equal "noise", session.status
+    assert_not_nil session.completed_at
+    assert_nil session.workstream_id
+    assert_equal 0, session.run_events.where.not(workstream_id: nil).count,
+      "noise events must be detached from workstreams"
+    assert_equal 0, session.run_events.where(event_type: "prompt_submitted").count,
+      "the transcript blob must not be stored"
+    ws = @project.workstreams.find_by(branch_name: "main")
+    assert_nil ws&.run_passport, "no passport rebuild for noise sessions"
+  end
+
+  test "ghost sessions (start and stop only) are demoted to noise" do
+    sid = "session-ghost"
+    post "/api/v1/hooks/session_start",
+      params: { session_id: sid, branch_name: "main" }, headers: @headers
+    post "/api/v1/hooks/stop",
+      params: { session_id: sid, branch_name: "main" }, headers: @headers
+    assert_response :success
+
+    session = @project.agent_sessions.find_by!(external_session_id: sid)
+    assert_equal "noise", session.status
+    assert_nil @project.workstreams.find_by(branch_name: "main")&.run_passport
+  end
+
+  test "real sessions with prompts and tools are not demoted" do
+    sid = "session-real"
+    post "/api/v1/hooks/session_start",
+      params: { session_id: sid, branch_name: "feature/real" }, headers: @headers
+    post "/api/v1/hooks/prompt",
+      params: { session_id: sid, branch_name: "feature/real", prompt: "Fix the login bug" },
+      headers: @headers
+    post "/api/v1/hooks/stop",
+      params: { session_id: sid, branch_name: "feature/real" }, headers: @headers
+
+    session = @project.agent_sessions.find_by!(external_session_id: sid)
+    assert_equal "completed", session.status
+    assert_not_nil @project.workstreams.find_by!(branch_name: "feature/real").run_passport
+  end
+
   test "a session that hops branches versions every passport it touched on stop" do
     sid = "session-hopper"
     post "/api/v1/hooks/session_start",
