@@ -13,10 +13,10 @@ class ProjectsController < ApplicationController
     @recent_sessions = @project.agent_sessions.order(started_at: :desc).limit(5)
     @tokens = @project.api_tokens
     @workstreams_total = @project.workstreams.count
-    @workstreams = @project.workstreams.recent.limit(TREE_WORKSTREAMS_LIMIT).includes(:run_passports, agent_sessions: :run_passport)
+    @workstreams = @project.workstreams.recent.limit(TREE_WORKSTREAMS_LIMIT).includes(:run_passport, :agent_sessions)
     unassigned = @project.agent_sessions.where(workstream_id: nil)
     @unassigned_total = unassigned.count
-    @unassigned_sessions = unassigned.includes(:run_passport).order(started_at: :desc).limit(TREE_SESSIONS_LIMIT)
+    @unassigned_sessions = unassigned.order(started_at: :desc).limit(TREE_SESSIONS_LIMIT)
   end
 
   def new

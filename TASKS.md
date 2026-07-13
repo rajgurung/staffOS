@@ -49,7 +49,7 @@ Generated from specs/workstream-passports.md on 2026-07-13.
 
 ## Parallel Group (after Task 4 — disjoint view files)
 
-- [ ] **Task 5: Session-side views** — `agent_sessions/index|show` become event
+- [x] **Task 5: Session-side views** — `agent_sessions/index|show` become event
   timeline + "contributed to [branch passport]" link (passport panel moves out);
   `projects/_tree_session` and `projects/show` read readiness/risk from the
   workstream's passport. Passport copy says "based on N captured sessions" per the
@@ -58,7 +58,7 @@ Generated from specs/workstream-passports.md on 2026-07-13.
   `app/controllers/projects_controller.rb`
   — Verify: `bin/rails test test/integration/pages_smoke_test.rb`
 
-- [ ] **Task 6: Workstream/passport-side views** — `workstreams/index|show` anchor on
+- [x] **Task 6: Workstream/passport-side views** — `workstreams/index|show` anchor on
   the single living passport (no more latest-of-many); `run_passports/index|show`,
   dashboard, risk_cockpit, search, settings views updated for workstream-anchored
   passports; version timeline shows which session drove each version.
@@ -69,12 +69,12 @@ Generated from specs/workstream-passports.md on 2026-07-13.
 
 ## Parallel Group (after Task 4 — data + tests)
 
-- [ ] **Task 7: Seeds** — `db/seeds.rb` builds one passport per workstream with
+- [x] **Task 7: Seeds** — `db/seeds.rb` builds one passport per workstream with
   per-session versions (helper at line ~30 currently creates per-session passports).
   — Files: `db/seeds.rb`
   — Verify: `bin/rails db:reset` succeeds on a dev database.
 
-- [ ] **Task 8: Test suite alignment + new behavior tests** — Update
+- [x] **Task 8: Test suite alignment + new behavior tests** — Update
   `test_helper.rb#make_passport` (build via workstream), fix existing tests; add:
   two-session workstream proves cumulative files/tests and version deltas
   ("readiness X → Y"); rolling-window test (old events on `main` excluded, same

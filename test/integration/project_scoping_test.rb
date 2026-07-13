@@ -46,12 +46,8 @@ class ProjectScopingTest < ActionDispatch::IntegrationTest
   end
 
   test "cannot view another user's passport" do
-    session = make_session(project: @other_project)
-    passport = session.create_run_passport!(
-      intent: "secret", summary: "s", risk_level: "Low", readiness_score: 10,
-      human_review_required: false, files_touched: [], test_summary: {},
-      missing_checks: [], recommended_actions: []
-    )
+    ws = make_workstream(project: @other_project, branch_name: "feature/secret-passport")
+    passport = make_passport(workstream: ws, intent: "secret", readiness_score: 10)
     sign_in @owner
     get run_passport_path(passport)
     assert_response :not_found

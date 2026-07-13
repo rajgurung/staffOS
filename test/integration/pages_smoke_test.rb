@@ -10,9 +10,6 @@ class PagesSmokeTest < ActionDispatch::IntegrationTest
       intent: "Do work", summary: "Did work"
     )
     @project = @passport.project
-    ws = Workstream.find_or_create_for_branch(project: @project, branch_name: "feature/smoke")
-    @passport.agent_session.update!(workstream: ws)
-    @passport.update!(workstream: ws)
     @document = Document.create!(project: @project, run_passport: @passport, document_type: "adr", title: "An ADR", content_markdown: "# ADR")
     @decision = DecisionLog.create!(project: @project, run_passport: @passport, title: "A decision", decision: "We chose X", status: "active")
     MemoryItem.create!(project: @project, memory_type: "decision", content: "Remember X", confidence: 0.8)

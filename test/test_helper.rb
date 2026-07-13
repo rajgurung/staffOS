@@ -30,6 +30,17 @@ module ActiveSupport
     # Run tests in parallel with specified workers
     parallelize(workers: :number_of_processors)
 
+    # Rails only forks workers once the suite exceeds its size threshold; each
+    # forked worker must report into SimpleCov separately or the merged
+    # coverage silently comes out as 0%.
+    parallelize_setup do |worker|
+      SimpleCov.command_name "#{SimpleCov.command_name}-#{worker}" if defined?(SimpleCov)
+    end
+
+    parallelize_teardown do
+      SimpleCov.result if defined?(SimpleCov)
+    end
+
     # Force the deterministic-heuristic path by disabling the LLM client for the
     # duration of the block, regardless of any configured key/credentials.
     def without_llm
@@ -69,10 +80,17 @@ module ActiveSupport
     end
 
     # Builds a passport directly with a known files_touched payload, bypassing
-    # the event pipeline — handy for risk/council/document tests.
-    def make_passport(files_touched: [], test_summary: {}, intent: "Do a thing", **attrs)
-      session = make_session
-      session.create_run_passport!(
+    # the event pipeline — handy for risk/council/document tests. Passports are
+    # per-workstream (one each, DB-enforced); when none is given, a fresh
+    # workstream with one session is created so callers can reach a session via
+    # passport.agent_sessions.
+    def make_passport(files_touched: [], test_summary: {}, intent: "Do a thing", workstream: nil, **attrs)
+      unless workstream
+        workstream = make_workstream(branch_name: "feature/passport-#{SecureRandom.hex(4)}")
+        make_session(project: workstream.project, workstream: workstream)
+      end
+      RunPassport.create!(
+        workstream: workstream,
         intent: intent,
         summary: "A summary",
         risk_level: "Low",

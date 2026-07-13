@@ -29,6 +29,16 @@ class RunPassportTest < ActiveSupport::TestCase
     assert_equal 100, passport.council_progress
   end
 
+  test "the database enforces one passport per workstream" do
+    passport = make_passport
+    duplicate = RunPassport.new(
+      workstream: passport.workstream,
+      intent: "dup", summary: "s", risk_level: "Low",
+      readiness_score: 1, human_review_required: false
+    )
+    assert_raises(ActiveRecord::RecordNotUnique) { duplicate.save(validate: false) }
+  end
+
   test "risk_color maps levels to UI tokens" do
     assert_equal "danger", make_passport(risk_level: "High").risk_color
     assert_equal "warning", make_passport(risk_level: "Medium").risk_color

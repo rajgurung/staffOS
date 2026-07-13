@@ -2,7 +2,7 @@ class RiskCockpitController < ApplicationController
   before_action :require_current_project, only: :index
 
   def index
-    @passports = current_project.run_passports.includes(:agent_session).order(created_at: :desc)
+    @passports = current_project.run_passports.includes(:workstream).order(created_at: :desc)
     @total_runs = @passports.count
     @high_risk = @passports.where(risk_level: "High").count
     @medium_risk = @passports.where(risk_level: "Medium").count

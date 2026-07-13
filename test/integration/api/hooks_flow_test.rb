@@ -75,10 +75,79 @@ class Api::HooksFlowTest < ActionDispatch::IntegrationTest
     session = AgentSession.find_by(external_session_id: sid)
     assert_equal "completed", session.status
 
-    passport = session.run_passport
+    passport = session.workstream.run_passport
     assert_not_nil passport, "expected a passport to be generated on stop"
     assert_equal "Add login", passport.intent
     assert_operator passport.passport_versions.count, :>=, 1
     assert_equal "feature/login", passport.workstream.branch_name
+  end
+
+  test "two sessions on one branch accumulate into a single passport with per-session versions" do
+    branch = "feature/cumulative"
+
+    # Session 1: edits one file, runs no tests.
+    post "/api/v1/hooks/session_start",
+      params: { session_id: "cum-1", branch_name: branch }, headers: @headers
+    post "/api/v1/hooks/prompt",
+      params: { session_id: "cum-1", branch_name: branch, prompt: "Build the alpha widget" }, headers: @headers
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: "cum-1", branch_name: branch, tool_name: "Edit",
+                tool_input: { file_path: "app/models/alpha.rb", old_string: "a", new_string: "a\nb" } },
+      headers: @headers
+    post "/api/v1/hooks/stop",
+      params: { session_id: "cum-1", branch_name: branch }, headers: @headers
+    assert_response :success
+
+    # Session 2: edits another file and runs a passing test command.
+    post "/api/v1/hooks/session_start",
+      params: { session_id: "cum-2", branch_name: branch }, headers: @headers
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: "cum-2", branch_name: branch, tool_name: "Edit",
+                tool_input: { file_path: "app/services/beta.rb", old_string: "x", new_string: "x\ny" } },
+      headers: @headers
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: "cum-2", branch_name: branch, tool_name: "Bash",
+                tool_input: { command: "bin/rails test" } },
+      headers: @headers
+    post "/api/v1/hooks/stop",
+      params: { session_id: "cum-2", branch_name: branch }, headers: @headers
+    assert_response :success
+
+    ws = Workstream.find_by(project: @project, branch_name: branch)
+    assert_equal 1, RunPassport.where(workstream: ws).count
+    passport = ws.run_passport
+
+    paths = passport.files_touched.map { |f| f["path"] }
+    assert_includes paths, "app/models/alpha.rb"
+    assert_includes paths, "app/services/beta.rb"
+
+    v1 = passport.passport_versions.find_by(version_number: 1)
+    v2 = passport.passport_versions.find_by(version_number: 2)
+    assert_not_nil v1
+    assert_not_nil v2
+    assert_operator v2.readiness_score, :>, v1.readiness_score,
+      "adding test evidence in session 2 should raise readiness"
+    assert_match(/readiness/, v2.changes_from_previous)
+    assert_equal "cum-1", v1.agent_session.external_session_id
+    assert_equal "cum-2", v2.agent_session.external_session_id
+  end
+
+  test "sessions on an unknown branch capture events but never a passport" do
+    assert_no_difference -> { RunPassport.count } do
+      post "/api/v1/hooks/session_start",
+        params: { session_id: "nb-1", branch_name: "unknown" }, headers: @headers
+      post "/api/v1/hooks/post_tool",
+        params: { session_id: "nb-1", branch_name: "unknown", tool_name: "Edit",
+                  tool_input: { file_path: "app/models/x.rb", old_string: "a", new_string: "b" } },
+        headers: @headers
+      post "/api/v1/hooks/stop",
+        params: { session_id: "nb-1", branch_name: "unknown" }, headers: @headers
+      assert_response :success
+    end
+
+    session = @project.agent_sessions.find_by(external_session_id: "nb-1")
+    assert_nil session.workstream
+    assert_equal "completed", session.status
+    assert_operator session.run_events.count, :>=, 2
   end
 end

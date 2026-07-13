@@ -30,11 +30,15 @@
               &middot; Started <%= time_ago_in_words(session.started_at) %> ago
             </p>
           </div>
-          <% if session.run_passport %>
+          <% passport = session.workstream&.run_passport %>
+          <% if passport %>
             <div class="flex items-center gap-4">
-              <%= status_pill(session.run_passport.risk_level, color: session.run_passport.risk_color.to_sym) %>
-              <span class="text-lg font-[850] tracking-[-0.05em]"><%= session.run_passport.readiness_score %>%</span>
+              <span class="text-[11px] text-text-muted">based on <%= pluralize(passport.sessions_count, "captured session") %></span>
+              <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
+              <span class="text-lg font-[850] tracking-[-0.05em]"><%= passport.readiness_score %>%</span>
             </div>
+          <% else %>
+            <span class="text-text-muted">&mdash;</span>
           <% end %>
         </div>
       </div>

@@ -70,9 +70,14 @@
             <code class="text-[11px] text-primary shrink-0"><%= ws.branch_name %></code>
             <%= status_pill(ws.status.titleize, color: ws.status_color.to_sym) %>
             <span class="ml-auto flex items-center gap-2 shrink-0">
-              <span class="text-[11px] text-text-muted"><%= ws.agent_sessions.size %> session<%= ws.agent_sessions.size == 1 ? '' : 's' %></span>
-              <% if ws.current_passport %>
-                <span class="text-[13px] font-[800]"><%= ws.current_passport.readiness_score %>%</span>
+              <% if ws.run_passport %>
+                <span class="text-[11px] text-text-muted">based on <%= ws.agent_sessions.size %> captured session<%= ws.agent_sessions.size == 1 ? '' : 's' %></span>
+                <% if ws.run_passport.risk_level.present? %>
+                  <%= status_pill(ws.run_passport.risk_level, color: ws.run_passport.risk_color.to_sym) %>
+                <% end %>
+                <span class="text-[13px] font-[800]"><%= ws.run_passport.readiness_score %>%</span>
+              <% else %>
+                <span class="text-[11px] text-text-muted"><%= ws.agent_sessions.size %> session<%= ws.agent_sessions.size == 1 ? '' : 's' %></span>
               <% end %>
               <%= link_to "View", workstream_path(ws), class: "text-[11px] font-bold text-primary no-underline hover:underline" %>
             </span>

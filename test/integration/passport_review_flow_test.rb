@@ -14,10 +14,6 @@ class PassportReviewFlowTest < ActionDispatch::IntegrationTest
       intent: "Harden retry handling",
       summary: "Bounded retries with idempotency."
     )
-    # Attach the passport's session to a workstream so views that link to it render.
-    ws = Workstream.find_or_create_for_branch(project: @passport.project, branch_name: "feature/retry")
-    @passport.agent_session.update!(workstream: ws)
-    @passport.update!(workstream: ws)
   end
 
   test "dashboard renders" do
