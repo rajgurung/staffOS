@@ -62,6 +62,13 @@
       <%= @passport.files_count %> <span class="text-[14px] font-semibold text-text-muted">Files</span>
     </p>
     <p class="text-text-muted text-[13px]">+<%= @passport.total_additions %> additions, -<%= @passport.total_deletions %> deletions</p>
+    <% if (coverage = @passport.branch_coverage).present? %>
+      <% gap = coverage["unobserved_paths"].to_a.size %>
+      <%= tag.p class: "text-[13px] mt-1 #{gap.zero? ? 'text-success' : 'text-warning'}",
+                title: (gap.positive? ? "Unobserved: #{coverage['unobserved_paths'].join(', ')}" : nil) do %>
+        Branch coverage: <%= coverage["observed"] %> of <%= coverage["branch_files"] %> branch files observed by sessions
+      <% end %>
+    <% end %>
   <% end %>
 
   <%= card(title: "Human Review", classes: "min-h-[146px] card-accent-purple") do %>

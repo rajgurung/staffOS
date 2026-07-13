@@ -23,12 +23,14 @@ class PassportGenerator
     llm_enriched = passport.persisted? && passport.summary_source == "llm"
     carried_checks = llm_enriched ? Array(passport.missing_checks).select { |c| c["source"] == "llm" } : []
 
+    files_touched = extract_files_touched
     attrs = {
       risk_level: "Pending",
       readiness_score: 0,
       human_review_required: false,
       test_summary: extract_test_summary,
-      files_touched: extract_files_touched,
+      files_touched: files_touched,
+      branch_coverage: compute_branch_coverage(files_touched),
       missing_checks: [],
       recommended_actions: []
     }
@@ -43,7 +45,7 @@ class PassportGenerator
     score = RiskScorer.new(passport).score
     passport.update!(
       risk_level: score[:level],
-      human_review_required: score[:human_review_required],
+      human_review_required: score[:human_review_required] || coverage_gap_dominates?(passport),
       readiness_score: calculate_readiness(passport, score),
       missing_checks: (generate_missing_checks(passport, score) + carried_checks).uniq { |c| c["check"] },
       recommended_actions: generate_recommendations(passport, score)
@@ -226,6 +228,38 @@ class PassportGenerator
     end
   end
 
+  # The branch's real state (from the CLI's git snapshot) vs what the captured
+  # sessions touched. Paths from tool events are absolute while git's are
+  # repo-relative, so observation is matched by suffix. Nil when no snapshot
+  # exists or on eternal branches (a branch diffed against itself is empty).
+  def compute_branch_coverage(files_touched)
+    return nil if ETERNAL_BRANCHES.include?(@workstream.branch_name)
+
+    snapshot = @workstream.run_events.where(event_type: "branch_snapshot").order(occurred_at: :desc).first
+    return nil unless snapshot
+
+    branch_paths = Array(snapshot.payload["files"]).filter_map { |f| f["path"].presence }
+    return nil if branch_paths.empty?
+
+    observed_paths = files_touched.map { |f| f["path"] }
+    unobserved = branch_paths.reject do |bp|
+      observed_paths.any? { |op| op == bp || op.end_with?("/#{bp}") }
+    end
+
+    {
+      "base_branch" => snapshot.payload["base_branch"],
+      "branch_files" => branch_paths.size,
+      "observed" => branch_paths.size - unobserved.size,
+      "unobserved_paths" => unobserved
+    }
+  end
+
+  def coverage_gap_dominates?(passport)
+    coverage = passport.branch_coverage
+    return false unless coverage && coverage["unobserved_paths"].present?
+    coverage["unobserved_paths"].size > coverage["observed"].to_i
+  end
+
   def calculate_readiness(passport, score)
     base = 100
     base -= 15 if score[:level] == "High"
@@ -236,6 +270,10 @@ class PassportGenerator
     base -= 25 if test_summary["status"] == "failed"
 
     base -= 5 if passport.files_touched&.none? { |f| f["category"] == "test" }
+
+    if passport.branch_coverage && passport.branch_coverage["unobserved_paths"].present?
+      base -= coverage_gap_dominates?(passport) ? 20 : 10
+    end
 
     [base, 0].max
   end
@@ -256,6 +294,16 @@ class PassportGenerator
       checks << { "check" => signal[:reason], "severity" => "high" }
     end
 
+    coverage = passport.branch_coverage
+    if coverage && (unobserved = coverage["unobserved_paths"]).present?
+      listed = unobserved.first(5).join(", ")
+      listed += ", …" if unobserved.size > 5
+      checks << {
+        "check" => "#{unobserved.size} #{"file".pluralize(unobserved.size)} changed on branch without captured session activity: #{listed}",
+        "severity" => coverage_gap_dominates?(passport) ? "high" : "medium"
+      }
+    end
+
     checks
   end
 
@@ -272,6 +320,10 @@ class PassportGenerator
 
     if passport.files_touched&.any? { |f| f["category"] == "config" }
       actions << { "action" => "Verify configuration change in staging", "priority" => "medium" }
+    end
+
+    if passport.branch_coverage && passport.branch_coverage["unobserved_paths"].present?
+      actions << { "action" => "Manually review branch changes no session touched", "priority" => "high" }
     end
 
     actions << { "action" => "Generate PR summary from passport", "priority" => "low" }

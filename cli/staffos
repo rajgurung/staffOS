@@ -10,7 +10,7 @@ require "fileutils"
 class StaffOSCLI
   CONFIG_FILE = ".staffos.yml"
   CREDENTIALS_FILE = File.expand_path("~/.staffos/credentials.yml")
-  VERSION = "0.2.0"
+  VERSION = "0.3.0"
 
   def initialize(args)
     @args = args
@@ -263,6 +263,9 @@ class StaffOSCLI
       body["tool_name"]  = data["tool_name"]
       body["tool_input"] = data["tool_input"]
       body["tool_output"] = data["tool_response"] || data["tool_output"]
+    when "stop"
+      snapshot = branch_snapshot(branch)
+      body["branch_snapshot"] = snapshot if snapshot
     end
 
     uri = URI("#{creds['endpoint']}/api/v1/hooks/#{event}")
@@ -358,6 +361,42 @@ class StaffOSCLI
 
   def current_branch
     `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip.then { |b| b.empty? ? "unknown" : b }
+  end
+
+  # What is actually on this branch vs where it forked from the default branch —
+  # paths and line counts only, never source (privacy model). Lets the server
+  # flag branch changes no captured session ever touched. Nil on the default
+  # branch itself, outside a repo, or when there is nothing to report.
+  def branch_snapshot(branch)
+    return nil if branch == "unknown"
+    default = default_branch
+    return nil if default.nil? || branch == default || branch == default.sub(%r{\Aorigin/}, "")
+
+    base = `git merge-base HEAD #{default} 2>/dev/null`.strip
+    return nil if base.empty?
+
+    files = `git diff --numstat #{base} 2>/dev/null`.lines.filter_map do |line|
+      adds, dels, path = line.strip.split("\t", 3)
+      next if path.nil? || path.empty?
+      # Binary files report "-" for counts; to_i maps them to 0.
+      { "path" => path, "additions" => adds.to_i, "deletions" => dels.to_i }
+    end
+
+    `git ls-files --others --exclude-standard 2>/dev/null`.lines.each do |line|
+      path = line.strip
+      files << { "path" => path, "additions" => 0, "deletions" => 0, "untracked" => true } unless path.empty?
+    end
+
+    return nil if files.empty?
+    { "base_branch" => default, "merge_base" => base, "files" => files }
+  end
+
+  def default_branch
+    origin_head = `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null`.strip
+    candidates = []
+    candidates << origin_head.sub("refs/remotes/", "") unless origin_head.empty?
+    candidates += %w[main master origin/main origin/master]
+    candidates.find { |c| system("git rev-parse --verify --quiet #{c} >/dev/null 2>&1") }
   end
 
   def detect_project_name

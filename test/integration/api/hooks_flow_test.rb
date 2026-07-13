@@ -53,6 +53,35 @@ class Api::HooksFlowTest < ActionDispatch::IntegrationTest
       .where(event_type: "command_run").count
   end
 
+  test "stop ingests the CLI's branch snapshot and the passport scores coverage" do
+    sid = "session-coverage"
+    post "/api/v1/hooks/session_start",
+      params: { session_id: sid, branch_name: "feature/cov" }, headers: @headers
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: sid, branch_name: "feature/cov", tool_name: "Edit",
+                tool_input: { file_path: "/repo/app/models/user.rb", old_string: "a", new_string: "b" } },
+      headers: @headers
+    post "/api/v1/hooks/stop",
+      params: { session_id: sid, branch_name: "feature/cov",
+                branch_snapshot: {
+                  base_branch: "origin/main", merge_base: "abc123",
+                  files: [
+                    { path: "app/models/user.rb", additions: 1, deletions: 1 },
+                    { path: "lib/manual_tweak.rb", additions: 30, deletions: 0 }
+                  ]
+                } },
+      headers: @headers
+    assert_response :success
+
+    ws = @project.workstreams.find_by!(branch_name: "feature/cov")
+    assert_equal 1, ws.run_events.where(event_type: "branch_snapshot").count
+
+    coverage = ws.run_passport.branch_coverage
+    assert_equal 2, coverage["branch_files"]
+    assert_equal 1, coverage["observed"]
+    assert_equal ["lib/manual_tweak.rb"], coverage["unobserved_paths"]
+  end
+
   test "a full session lifecycle produces a passport with a version" do
     sid = "session-abc"
 
