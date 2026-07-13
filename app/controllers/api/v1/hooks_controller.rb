@@ -30,9 +30,20 @@ module Api
         }
       end
 
+      # Claude Code tooling (memory hooks, summarizers) spawns headless helper
+      # sessions in the same repo whose prompt is a pasted conversation
+      # transcript. They are not engineering work: don't store the transcript,
+      # and detach the session so it never counts toward any passport.
+      NOISE_PROMPT = /\A\s*={2,}\s*Transcript of a conversation/i
+
       def prompt
         ws = resolve_workstream
         session = find_or_create_session
+
+        if params[:prompt].to_s.match?(NOISE_PROMPT)
+          demote_to_noise(session)
+          return render json: {}
+        end
 
         session.run_events.create!(
           event_type: "prompt_submitted",
@@ -133,6 +144,15 @@ module Api
         session = find_or_create_session
         ws = resolve_workstream
 
+        # Ghost sessions (started and stopped without a single prompt or tool
+        # use) are helper-process residue, same as transcript-noise sessions.
+        demote_to_noise(session) if session.status != "noise" && ghost_session?(session)
+
+        if session.status == "noise"
+          session.update!(completed_at: Time.current)
+          return render json: {}
+        end
+
         session.run_events.create!(
           event_type: "session_completed",
           occurred_at: Time.current,
@@ -193,6 +213,18 @@ module Api
         branch = current_branch
         return nil if branch.blank? || branch == "unknown"
         Workstream.find_or_create_for_branch(project: resolve_project, branch_name: branch)
+      end
+
+      # Noise sessions keep their row (so later hooks for the same session id
+      # find the flag) but detach from workstreams entirely — they must never
+      # feed a passport, a timeline, or a session count.
+      def demote_to_noise(session)
+        session.update!(status: "noise", workstream: nil)
+        session.run_events.update_all(workstream_id: nil)
+      end
+
+      def ghost_session?(session)
+        session.run_events.where.not(event_type: "session_started").none?
       end
 
       def resolve_project

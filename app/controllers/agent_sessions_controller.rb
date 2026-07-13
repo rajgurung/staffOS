@@ -3,7 +3,13 @@ class AgentSessionsController < ApplicationController
 
   def index
     @sessions = current_project.agent_sessions.includes(workstream: :run_passport).order(started_at: :desc)
-    @sessions = @sessions.where(status: params[:status]) if params[:status].present?
+    if params[:status].present?
+      @sessions = @sessions.where(status: params[:status])
+    else
+      # Helper-process residue (transcript summarizers, ghosts) is hidden
+      # unless explicitly requested via ?status=noise.
+      @sessions = @sessions.where.not(status: "noise")
+    end
     @sessions = @sessions.where("branch_name ILIKE ?", "%#{params[:branch]}%") if params[:branch].present?
   end
 
