@@ -28,6 +28,31 @@ class Api::HooksFlowTest < ActionDispatch::IntegrationTest
     assert_equal 0, victim.agent_sessions.count
   end
 
+  test "the same external session id under different tokens stays isolated per project" do
+    other_project = make_project(name: "Other", repo_name: "org/other")
+    other_token = other_project.api_tokens.create!(name: "cli")
+
+    post "/api/v1/hooks/session_start",
+      params: { session_id: "shared-id", branch_name: "main" }, headers: @headers
+    assert_response :success
+
+    post "/api/v1/hooks/post_tool",
+      params: { session_id: "shared-id", branch_name: "main", tool_name: "Bash",
+                tool_input: { command: "ls" } },
+      headers: { "Authorization" => "Bearer #{other_token.token}" }
+    assert_response :success
+
+    assert_equal 1, @project.agent_sessions.where(external_session_id: "shared-id").count
+    assert_equal 1, other_project.agent_sessions.where(external_session_id: "shared-id").count
+
+    event = other_project.agent_sessions.find_by(external_session_id: "shared-id")
+      .run_events.find_by(event_type: "command_run")
+    assert_equal other_project, event.workstream.project,
+      "events must never attach to another project's session or workstream"
+    assert_equal 0, @project.agent_sessions.find_by(external_session_id: "shared-id").run_events
+      .where(event_type: "command_run").count
+  end
+
   test "a full session lifecycle produces a passport with a version" do
     sid = "session-abc"
 

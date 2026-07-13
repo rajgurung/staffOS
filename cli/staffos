@@ -10,7 +10,7 @@ require "fileutils"
 class StaffOSCLI
   CONFIG_FILE = ".staffos.yml"
   CREDENTIALS_FILE = File.expand_path("~/.staffos/credentials.yml")
-  VERSION = "0.1.2"
+  VERSION = "0.2.0"
 
   def initialize(args)
     @args = args
@@ -77,6 +77,11 @@ class StaffOSCLI
       config = YAML.load_file(CONFIG_FILE)
       puts "  Project: #{config['project_name']}"
       puts "  Endpoint: #{config['api_endpoint']}"
+      if config["api_token"]
+        puts "  Token:    project-specific"
+      else
+        puts "  Token:    global login (add api_token to #{CONFIG_FILE} to pin this repo to its project)"
+      end
       return
     end
 
@@ -93,6 +98,13 @@ class StaffOSCLI
     input = $stdin.gets.strip
     project_name = input unless input.empty?
 
+    # API tokens belong to exactly one StaffOS project, and the server files
+    # captured events under the token's project. Storing the token per-repo
+    # keeps each repo routing to its own project even after a global re-login.
+    puts "\nEach StaffOS project has its own API token (find it on the project's Connect page)."
+    print "API token for this project [reuse global login token]: "
+    project_token = $stdin.gets.strip
+
     config = {
       "project_name" => project_name,
       "repo_name" => repo_name,
@@ -103,6 +115,7 @@ class StaffOSCLI
         "redact_secrets" => true
       }
     }
+    config["api_token"] = project_token unless project_token.empty?
 
     File.write(CONFIG_FILE, config.to_yaml)
     puts "Created #{CONFIG_FILE}"
@@ -126,6 +139,7 @@ class StaffOSCLI
     puts "Endpoint:    #{creds ? creds['endpoint'] : 'Not logged in'}"
     puts "Config:      #{File.exist?(CONFIG_FILE) ? CONFIG_FILE : 'Not found'}"
     puts "Credentials: #{File.exist?(CREDENTIALS_FILE) ? 'Saved' : 'Not found'}"
+    puts "Token:       #{config && config['api_token'] ? "project-specific (#{CONFIG_FILE})" : 'global login'}"
 
     hooks_file = ".claude/settings.json"
     if File.exist?(hooks_file)
@@ -233,7 +247,7 @@ class StaffOSCLI
   # the current git branch, and POSTs to StaffOS. Never raises — a capture
   # failure must not break the user's Claude Code session.
   def capture(event)
-    creds = load_credentials
+    creds = capture_credentials
     return unless creds && creds["token"] && event
 
     data = JSON.parse($stdin.read) rescue {}
@@ -322,6 +336,18 @@ class StaffOSCLI
   def load_credentials
     return nil unless File.exist?(CREDENTIALS_FILE)
     YAML.load_file(CREDENTIALS_FILE)
+  end
+
+  # Token/endpoint used by `capture`. The repo's .staffos.yml wins over the
+  # global login so each repo routes to its own StaffOS project — the global
+  # token belongs to one project and would misfile every other repo's events.
+  def capture_credentials
+    config = load_config
+    creds = load_credentials || {}
+    endpoint = (config && config["api_endpoint"]) || creds["endpoint"]
+    token = (config && config["api_token"]) || creds["token"]
+    return nil unless endpoint && token
+    { "endpoint" => endpoint, "token" => token }
   end
 
   def load_config

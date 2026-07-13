@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_10_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_13_190438) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -27,6 +27,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_160000) do
     t.string "status"
     t.datetime "updated_at", null: false
     t.bigint "workstream_id"
+    t.index ["project_id", "external_session_id"], name: "index_agent_sessions_on_project_and_external_id", unique: true
     t.index ["project_id"], name: "index_agent_sessions_on_project_id"
     t.index ["workstream_id"], name: "index_agent_sessions_on_workstream_id"
   end
