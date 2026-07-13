@@ -8,8 +8,8 @@
 class Staffos < Formula
   desc "Capture Claude Code sessions into StaffOS Run Passports"
   homepage "https://github.com/rajgurung/staffOS"
-  url "https://github.com/rajgurung/staffOS/archive/refs/tags/cli-v0.3.0.tar.gz"
-  sha256 "7b7ebfea1f805c27df2b7579179bd8894f68d69f4a57576481e7d863c271f429"
+  url "https://github.com/rajgurung/staffOS/archive/refs/tags/cli-v0.4.0.tar.gz"
+  sha256 "34ed09c5f13fe42947558710e4856f12a8e2c3c331f09f1ab9c1bd769172f3b7"
   license "MIT"
 
   depends_on "ruby"
