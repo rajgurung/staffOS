@@ -90,7 +90,7 @@ Rails 8 monolith, existing stack. Key moves:
 - [x] Rolling-window test: events older than 7 days on `main` don't affect the
       assessment; the same events on a feature branch do.
 - [x] A `branch_name: unknown` session produces events but no passport.
-- [ ] Existing prod passport and its document/decision/council links survive migration.
+- [x] Existing prod passport and its document/decision/council links survive migration.
 - [x] Full suite green; smoke tests cover the reworked session/workstream/passport pages.
 
 ## Risks and Unknowns
