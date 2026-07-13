@@ -149,13 +149,15 @@ module Api
 
       def find_or_create_session
         session_id = params[:session_id] || "unknown-#{Time.now.to_i}"
-        AgentSession.find_or_create_by!(external_session_id: session_id) do |s|
+        # Scoped to the token's project: an external session id is only unique
+        # per client, so a global lookup would let events from one project (or
+        # another user's token) attach to an unrelated project's session.
+        resolve_project.agent_sessions.find_or_create_by!(external_session_id: session_id) do |s|
           s.provider = "claude_code"
           s.agent_name = "Claude Code"
           s.branch_name = current_branch
           s.status = "active"
           s.started_at = Time.current
-          s.project = resolve_project
           s.workstream = resolve_workstream
         end
       end
