@@ -135,14 +135,16 @@ module Api
 
         # The CLI sends what git says is actually on the branch (paths + line
         # counts vs the merge-base). Recorded before the passport rebuild so
-        # the generator can score coverage against it.
-        if ws && params[:branch_snapshot].present?
+        # the generator can score coverage against it. Only hash-shaped params
+        # are accepted — anything else would break the stop flow mid-way.
+        snapshot = params[:branch_snapshot]
+        if ws && snapshot.is_a?(ActionController::Parameters)
           session.run_events.create!(
             event_type: "branch_snapshot",
             occurred_at: Time.current,
             workstream: ws,
             source: "claude_code",
-            payload: params[:branch_snapshot].to_unsafe_h
+            payload: snapshot.to_unsafe_h
           )
         end
 
