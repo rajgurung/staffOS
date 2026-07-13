@@ -379,7 +379,7 @@ class StaffOSCLI
       adds, dels, path = line.strip.split("\t", 3)
       next if path.nil? || path.empty?
       # Binary files report "-" for counts; to_i maps them to 0.
-      { "path" => path, "additions" => adds.to_i, "deletions" => dels.to_i }
+      { "path" => normalize_numstat_path(path), "additions" => adds.to_i, "deletions" => dels.to_i }
     end
 
     `git ls-files --others --exclude-standard 2>/dev/null`.lines.each do |line|
@@ -389,6 +389,17 @@ class StaffOSCLI
 
     return nil if files.empty?
     { "base_branch" => default, "merge_base" => base, "files" => files }
+  end
+
+  # Renames come back as "app/{models => services}/user.rb" (shared-prefix
+  # form) or "old.rb => new.rb"; coverage should track the file's new path.
+  def normalize_numstat_path(path)
+    return path unless path.include?(" => ")
+    if path.include?("{")
+      path.gsub(/\{[^{}]*? => ([^{}]*?)\}/) { $1 }.squeeze("/").sub(%r{\A/}, "")
+    else
+      path.split(" => ").last
+    end
   end
 
   def default_branch
