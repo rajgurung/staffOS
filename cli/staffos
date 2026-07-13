@@ -118,6 +118,7 @@ class StaffOSCLI
     config["api_token"] = project_token unless project_token.empty?
 
     File.write(CONFIG_FILE, config.to_yaml)
+    File.chmod(0600, CONFIG_FILE) if config["api_token"]
     puts "Created #{CONFIG_FILE}"
 
     ignore_local_config
