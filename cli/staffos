@@ -10,7 +10,7 @@ require "fileutils"
 class StaffOSCLI
   CONFIG_FILE = ".staffos.yml"
   CREDENTIALS_FILE = File.expand_path("~/.staffos/credentials.yml")
-  VERSION = "0.1.0"
+  VERSION = "0.1.1"
 
   def initialize(args)
     @args = args
