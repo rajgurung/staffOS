@@ -1,15 +1,27 @@
 class PassportGenerator
-  def initialize(agent_session)
-    @session = agent_session
-    @events = agent_session.run_events.order(occurred_at: :asc)
+  # Eternal branches never merge, so their passport assesses a rolling window
+  # instead of blending months of unrelated work. Event history is never
+  # trimmed — the window only bounds what the assessment reads.
+  ETERNAL_BRANCHES = %w[main master].freeze
+  ROLLING_WINDOW = 7.days
+
+  def initialize(workstream)
+    @workstream = workstream
+    scope = workstream.run_events.order(occurred_at: :asc)
+    scope = scope.where(occurred_at: ROLLING_WINDOW.ago..) if ETERNAL_BRANCHES.include?(workstream.branch_name)
+    @events = scope
   end
 
+  # Full rebuild of the workstream's living passport from all its (windowed)
+  # events. Upserts in place — never delete/recreate — so council reviews,
+  # documents, and version history survive every reassessment.
   def generate!
-    return @session.run_passport if @session.run_passport.present?
+    passport = @workstream.run_passport || @workstream.build_run_passport
 
-    passport = @session.build_run_passport(
+    passport.assign_attributes(
       intent: extract_intent,
       summary: build_summary,
+      summary_source: "heuristic",
       risk_level: "Pending",
       readiness_score: 0,
       human_review_required: false,
@@ -18,7 +30,6 @@ class PassportGenerator
       missing_checks: [],
       recommended_actions: []
     )
-
     passport.save!
 
     score = RiskScorer.new(passport).score
@@ -67,20 +78,21 @@ class PassportGenerator
 
   def smart_summary_system
     <<~SYS
-      You are StaffOS, a reviewer that turns AI-assisted coding sessions into a
-      verified engineering record. You receive only metadata about a session —
-      file paths, change sizes, categories, test results, and risk signals. You
-      never see source code. Be precise, concrete, and concise. Write for a
-      senior engineer reviewing the change before merge.
+      You are StaffOS, a reviewer that turns AI-assisted coding work into a
+      verified engineering record. You receive only metadata about the work on
+      one git branch — file paths, change sizes, categories, test results, and
+      risk signals, accumulated across the captured sessions on that branch.
+      You never see source code. Be precise, concrete, and concise. Write for a
+      senior engineer reviewing the branch before merge.
     SYS
   end
 
   def smart_summary_prompt(passport)
     <<~PROMPT
-      Summarise this AI-assisted coding session and extract review gaps.
+      Summarise the AI-assisted work on this branch (#{passport.agent_sessions.count} captured sessions) and extract review gaps.
 
       Stated intent (raw prompt): #{passport.intent}
-      Branch: #{passport.agent_session.branch_name}
+      Branch: #{passport.workstream.branch_name}
       Deterministic risk level (do not contradict): #{passport.risk_level}
 
       Files touched:
@@ -147,7 +159,7 @@ class PassportGenerator
     commands = command_events.map { |e| e.payload["command"] }.compact
     parts << "Ran #{commands.count} commands" if commands.any?
 
-    parts.join(". ").presence || "Session completed"
+    parts.join(". ").presence || "No captured activity in the assessed window"
   end
 
   def extract_test_summary

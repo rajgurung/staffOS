@@ -3,7 +3,7 @@ class Workstream < ApplicationRecord
 
   has_many :agent_sessions, dependent: :nullify
   has_many :run_events, dependent: :nullify
-  has_many :run_passports, dependent: :nullify
+  has_one :run_passport, dependent: :destroy
   has_many :documents, dependent: :nullify
   has_many :decision_logs, dependent: :nullify
   has_many :memory_items, dependent: :nullify
@@ -34,14 +34,6 @@ class Workstream < ApplicationRecord
     end
   end
 
-  def current_passport
-    if run_passports.loaded?
-      run_passports.max_by(&:created_at)
-    else
-      run_passports.order(created_at: :desc).first
-    end
-  end
-
   def total_sessions
     agent_sessions.count
   end
@@ -51,25 +43,17 @@ class Workstream < ApplicationRecord
   end
 
   def all_files_touched
-    files = {}
-    run_passports.each do |passport|
-      (passport.files_touched || []).each do |f|
-        path = f["path"]
-        next unless path
-        files[path] ||= { "path" => path, "additions" => 0, "deletions" => 0 }
-        files[path]["additions"] += f["additions"].to_i
-        files[path]["deletions"] += f["deletions"].to_i
-      end
-    end
-    files.values
+    run_passport&.files_touched || []
   end
 
   def risk_trend
-    run_passports.order(:created_at).pluck(:risk_level)
+    return [] unless run_passport
+    run_passport.passport_versions.ordered.pluck(:risk_level)
   end
 
   def readiness_trend
-    run_passports.order(:created_at).pluck(:readiness_score)
+    return [] unless run_passport
+    run_passport.passport_versions.ordered.pluck(:readiness_score)
   end
 
   def promote_to_project!

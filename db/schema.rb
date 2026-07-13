@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_13_190438) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_13_194544) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -111,6 +111,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_190438) do
   end
 
   create_table "passport_versions", force: :cascade do |t|
+    t.bigint "agent_session_id"
     t.text "changes_from_previous"
     t.datetime "created_at", null: false
     t.jsonb "files_touched"
@@ -124,6 +125,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_190438) do
     t.string "trigger"
     t.datetime "updated_at", null: false
     t.integer "version_number"
+    t.index ["agent_session_id"], name: "index_passport_versions_on_agent_session_id"
     t.index ["run_passport_id"], name: "index_passport_versions_on_run_passport_id"
   end
 
@@ -153,7 +155,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_190438) do
   end
 
   create_table "run_passports", force: :cascade do |t|
-    t.bigint "agent_session_id", null: false
     t.integer "cost_cents", default: 0, null: false
     t.datetime "created_at", null: false
     t.integer "current_version", default: 0
@@ -172,9 +173,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_190438) do
     t.string "summary_source", default: "heuristic", null: false
     t.jsonb "test_summary"
     t.datetime "updated_at", null: false
-    t.bigint "workstream_id"
-    t.index ["agent_session_id"], name: "index_run_passports_on_agent_session_id"
-    t.index ["workstream_id"], name: "index_run_passports_on_workstream_id"
+    t.bigint "workstream_id", null: false
+    t.index ["workstream_id"], name: "index_run_passports_on_workstream_id", unique: true
   end
 
   create_table "users", force: :cascade do |t|
@@ -217,11 +217,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_190438) do
   add_foreign_key "memory_items", "documents"
   add_foreign_key "memory_items", "projects"
   add_foreign_key "memory_items", "workstreams"
+  add_foreign_key "passport_versions", "agent_sessions"
   add_foreign_key "passport_versions", "run_passports"
   add_foreign_key "projects", "users"
   add_foreign_key "run_events", "agent_sessions"
   add_foreign_key "run_events", "workstreams"
-  add_foreign_key "run_passports", "agent_sessions"
   add_foreign_key "run_passports", "workstreams"
   add_foreign_key "workstreams", "projects"
 end

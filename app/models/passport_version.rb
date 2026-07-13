@@ -1,5 +1,6 @@
 class PassportVersion < ApplicationRecord
   belongs_to :run_passport
+  belongs_to :agent_session, optional: true
 
   TRIGGERS = %w[session_completed council_completed manual_assessment reassessment].freeze
 
@@ -26,5 +27,10 @@ class PassportVersion < ApplicationRecord
     prev = previous
     return nil unless prev
     readiness_score.to_i - prev.readiness_score.to_i
+  end
+
+  def duration_minutes
+    return nil unless agent_session&.started_at && agent_session&.completed_at
+    ((agent_session.completed_at - agent_session.started_at) / 60).round(1)
   end
 end
