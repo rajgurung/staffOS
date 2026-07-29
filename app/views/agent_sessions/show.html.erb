@@ -1,48 +1,83 @@
+<% multi_branch = @touched_workstreams.size > 1 %>
+
 <div class="flex justify-between items-start mb-6">
   <div>
-    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">
-      Run: <%= @session.agent_name %>
+    <p class="text-[12px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-1">Agent Session</p>
+    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2 flex items-center gap-3">
+      <%= @session.agent_name %>
       <%= status_pill(@session.status&.capitalize || "Active", color: @session.status == "completed" ? :success : :info) %>
     </h1>
     <p class="text-text-muted text-sm">
-      Branch: <span class="text-primary"><%= @session.branch_name %></span>
-      &middot; <%= @session.project.name %>
-      &middot; Started <%= time_ago_in_words(@session.started_at) %> ago
+      <%= @session.project.name %>
+      &middot; started <%= time_ago_in_words(@session.started_at) %> ago
+      <% if @session.completed_at %>
+        &middot; ran <%= ((@session.completed_at - @session.started_at) / 60).round %> min
+      <% end %>
+      &middot; <%= pluralize(@events.size, "event") %>
+      <% if multi_branch %>
+        &middot; touched <%= @touched_workstreams.size %> branches
+      <% end %>
     </p>
   </div>
 </div>
 
-<% if @passports.any? %>
-  <% @passports.each do |passport| %>
-    <%= link_to run_passport_path(passport), class: "card block no-underline mb-6" do %>
-      <div class="relative p-5 flex justify-between items-center gap-4">
-        <div>
-          <p class="text-[13px] font-[800] m-0">
-            Contributed to the <span class="text-primary"><%= passport.workstream.branch_name %></span> passport
-          </p>
-          <p class="text-text-muted text-xs mt-1">
-            Based on <%= pluralize(passport.sessions_count, "captured session") %> &middot; Full readiness detail lives on the passport
-          </p>
-        </div>
-        <div class="flex items-center gap-4 shrink-0">
-          <% if passport.risk_level.present? %>
-            <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
-          <% end %>
-          <span class="text-lg font-[850] tracking-[-0.05em]"><%= passport.readiness_score %>%</span>
-        </div>
+<%# Branch passports this session fed — one card per touched branch %>
+<div class="mb-6">
+  <p class="text-[12px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-2">
+    <%= @passports.many? ? "Passports fed by this session" : "Passport fed by this session" %>
+  </p>
+  <% if @passports.any? %>
+    <div class="grid grid-cols-3 gap-4 max-xl:grid-cols-2 max-lg:grid-cols-1">
+      <% @passports.each do |passport| %>
+        <%= link_to run_passport_path(passport), class: "card block no-underline" do %>
+          <div class="relative p-4">
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <code class="text-primary text-[12px] font-semibold truncate"><%= passport.workstream.branch_name %></code>
+              <% if passport.workstream == @session.workstream %>
+                <span class="text-[10px] font-semibold uppercase tracking-[0.04em] text-text-muted bg-bg-wash px-1.5 py-0.5 rounded shrink-0">Primary</span>
+              <% end %>
+            </div>
+            <div class="flex items-end justify-between gap-2">
+              <div>
+                <span class="text-[26px] font-[850] tracking-[-0.05em] leading-none"><%= passport.readiness_score %>%</span>
+                <span class="block text-text-muted text-[11px] mt-1.5">ready &middot; <%= pluralize(passport.sessions_count, "session") %></span>
+              </div>
+              <% if passport.risk_level.present? %>
+                <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="card">
+      <div class="relative p-4">
+        <p class="text-text-muted text-sm m-0">This session's events weren't tied to a known branch, so no passport was updated.</p>
       </div>
-    <% end %>
+    </div>
   <% end %>
-<% else %>
-  <p class="text-text-muted text-sm mb-6">No passport applies to this session (unknown branch).</p>
-<% end %>
+</div>
 
 <div class="grid grid-cols-3 gap-4 mb-6 max-xl:grid-cols-1">
   <%= card(title: "Session Info") do %>
     <div class="space-y-3 text-sm">
       <div class="flex justify-between"><span class="text-text-muted">Provider</span><span class="font-semibold"><%= @session.provider %></span></div>
       <div class="flex justify-between"><span class="text-text-muted">Agent</span><span class="font-semibold"><%= @session.agent_name %></span></div>
-      <div class="flex justify-between"><span class="text-text-muted">Branch</span><span class="text-primary font-semibold"><%= @session.branch_name %></span></div>
+      <div class="flex justify-between gap-4">
+        <span class="text-text-muted shrink-0"><%= "Branch".pluralize(@touched_workstreams.size) %></span>
+        <span class="flex flex-wrap justify-end gap-1.5 min-w-0">
+          <% if @touched_workstreams.any? %>
+            <% @touched_workstreams.each do |ws| %>
+              <%= link_to workstream_path(ws), class: "no-underline max-w-full" do %>
+                <code class="block text-primary text-[11px] font-semibold bg-primary-soft px-1.5 py-0.5 rounded truncate"><%= ws.branch_name %></code>
+              <% end %>
+            <% end %>
+          <% else %>
+            <code class="text-text-soft text-[11px]"><%= @session.branch_name.presence || "unknown" %></code>
+          <% end %>
+        </span>
+      </div>
       <div class="flex justify-between"><span class="text-text-muted">Started</span><span><%= @session.started_at&.strftime("%Y-%m-%d %H:%M") %></span></div>
       <div class="flex justify-between"><span class="text-text-muted">Completed</span><span><%= @session.completed_at&.strftime("%Y-%m-%d %H:%M") || "In progress" %></span></div>
       <% if @session.metadata.present? %>
@@ -52,7 +87,7 @@
     </div>
   <% end %>
 
-  <%= card(title: "Event Timeline", classes: "col-span-2 max-h-[500px] overflow-y-auto") do %>
+  <%= card(title: "Event Timeline", classes: "col-span-2 max-xl:col-span-1 max-h-[500px] overflow-y-auto") do %>
     <div class="flex flex-col gap-[18px]">
       <% @events.each do |event| %>
         <div class="grid grid-cols-[74px_18px_1fr] gap-3 items-start">
@@ -63,8 +98,14 @@
               when /failed|error/ then 'bg-danger'
               else 'bg-primary'
             end %>"></span>
-          <div>
-            <p class="text-[13px] font-[800] m-0"><%= event.event_type.titleize %></p>
+          <div class="min-w-0">
+            <p class="text-[13px] font-[800] m-0 flex items-center gap-2 flex-wrap">
+              <%= event.event_type.titleize %>
+              <%# Only flag branch hops — events on the session's primary branch stay untagged %>
+              <% if event.workstream && event.workstream != @session.workstream %>
+                <code class="text-[10px] font-semibold text-primary bg-primary-soft px-1.5 py-0.5 rounded"><%= event.workstream.branch_name %></code>
+              <% end %>
+            </p>
             <p class="text-text-muted text-xs mt-1">
               <% if event.payload["file"] %><code class="text-primary"><%= event.payload["file"] %></code><% end %>
               <% if event.payload["command"] %><code class="text-purple"><%= event.payload["command"] %></code><% end %>
