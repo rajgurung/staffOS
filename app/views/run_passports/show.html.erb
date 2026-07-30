@@ -45,11 +45,14 @@
 
   <%= card(title: "Risk Level", classes: "min-h-[146px] card-accent-warning") do %>
     <p class="mt-2 metric text-[32px] <%= risk_color(@passport.risk_level) %>"><%= @passport.risk_level %></p>
-    <p class="text-text-muted text-[13px]">Retry logic changed and observability gap detected.</p>
+    <% top_check = (@passport.missing_checks || []).find { |c| c["severity"] == "high" } %>
+    <% if top_check %>
+      <p class="text-text-muted text-[13px]"><%= truncate(top_check["check"], length: 90) %></p>
+    <% end %>
   <% end %>
 
   <%= card(title: "Tests", classes: "min-h-[146px] card-accent-teal") do %>
-    <p class="mt-2 metric text-[32px] text-success"><%= @passport.test_status %></p>
+    <p class="mt-2 metric text-[32px] <%= { 'Passed' => 'text-success', 'Failed' => 'text-danger' }[@passport.test_status] || 'text-text-muted' %>"><%= @passport.test_status %></p>
     <p class="text-text-muted text-[13px]">
       <% if @passport.test_summary.present? %>
         <%= @passport.test_summary["total"] %> examples, <%= @passport.test_summary["failed"] %> failures. <%= @passport.test_summary["new_tests"] %> new tests.
@@ -75,83 +78,22 @@
     <p class="mt-2 metric text-[32px] <%= @passport.human_review_required? ? 'text-warning' : 'text-success' %>">
       <%= @passport.human_review_required? ? "Required" : "Accepted" %>
     </p>
-    <p class="text-text-muted text-[13px]">
-      <%= @passport.human_review_required? ? "Changes touch retry behaviour and need senior review." : "No high-risk changes detected." %>
-    </p>
-  <% end %>
-</div>
-
-<%# Middle Row: Timeline | Code Diff | Risk Analysis %>
-<div class="grid grid-cols-[1.15fr_1.6fr_1fr] gap-4 mb-4 max-xl:grid-cols-1">
-  <%= card(title: "Branch Activity", classes: "max-h-[420px] overflow-y-auto") do %>
-    <div class="flex flex-col gap-[18px]">
-      <% @events.each do |event| %>
-        <div class="grid grid-cols-[74px_18px_1fr] gap-3 items-start">
-          <span class="text-text-muted text-xs"><%= event.occurred_at.strftime("%H:%M:%S") %></span>
-          <span class="w-3 h-3 mt-[3px] rounded-full <%= event.event_type.include?('completed') || event.event_type.include?('command_run') ? 'bg-success' : 'bg-primary' %>"></span>
-          <div>
-            <p class="text-[13px] font-bold m-0"><%= event.event_type.titleize %></p>
-            <p class="text-text-muted text-xs mt-1">
-              <% if event.payload["file"] %>
-                <code class="text-primary"><%= event.payload["file"] %></code>
-              <% elsif event.payload["command"] %>
-                <code class="text-purple"><%= event.payload["command"] %></code>
-              <% elsif event.payload["prompt"] %>
-                <%= truncate(event.payload["prompt"], length: 80) %>
-              <% elsif event.payload["summary"] %>
-                <%= truncate(event.payload["summary"], length: 80) %>
-              <% end %>
-            </p>
-          </div>
-        </div>
+    <% if @passport.human_review_required? %>
+      <% high = (@passport.missing_checks || []).count { |c| c["severity"] == "high" } %>
+      <% if high > 0 %>
+        <p class="text-text-muted text-[13px]"><%= pluralize(high, "high-severity check") %> outstanding.</p>
       <% end %>
-    </div>
-  <% end %>
-
-  <%# Code Diff %>
-  <div class="card min-h-[330px]">
-    <div class="flex gap-[22px] border-b border-panel-border px-[18px]">
-      <span class="py-4 pb-3 text-text-primary text-[13px] font-bold tab-active">Changes</span>
-      <span class="py-4 pb-3 text-text-muted text-[13px] font-bold cursor-pointer hover:text-text-soft">Files</span>
-      <span class="py-4 pb-3 text-text-muted text-[13px] font-bold cursor-pointer hover:text-text-soft">Tests</span>
-    </div>
-    <div class="relative p-4">
-      <div class="overflow-hidden border border-panel-border rounded-[14px] bg-bg font-mono text-xs">
-        <div class="px-3.5 py-3 border-b border-panel-border text-text-soft">app/services/inference_callback_handler.rb</div>
-        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 text-text-soft"><span class="text-text-muted text-right">28</span><span>class InferenceCallbackHandler</span></div>
-        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 text-text-soft"><span class="text-text-muted text-right">29</span><span>  def process_callback(payload)</span></div>
-        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-removed"><span class="text-text-muted text-right">30</span><span>-   retry_count = 3</span></div>
-        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">30</span><span>+   return if already_processed?(payload[:idempotency_key])</span></div>
-        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">31</span><span>+   retry_with_backoff(max_attempts: 5) do</span></div>
-        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">32</span><span>+     log_with_correlation(payload) do</span></div>
-        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">33</span><span>+       execute_callback(payload)</span></div>
-        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">34</span><span>+     end</span></div>
-        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 diff-added"><span class="text-text-muted text-right">35</span><span>+   end</span></div>
-        <div class="grid grid-cols-[42px_1fr] gap-3.5 py-[5px] px-3.5 text-text-soft"><span class="text-text-muted text-right">36</span><span>  end</span></div>
-      </div>
-    </div>
-  </div>
-
-  <%# Risk Analysis %>
-  <%= card(title: "Risk Analysis") do %>
-    <div class="risk-score-ring w-[136px] h-[136px] mx-auto mt-1 mb-[18px] grid place-items-center rounded-full">
-      <div class="text-center">
-        <strong class="text-[34px] tracking-[-0.05em]">6.4</strong>
-        <span class="block text-text-muted text-xs">Medium Risk</span>
-      </div>
-    </div>
-    <div class="space-y-[11px]">
-      <div class="flex justify-between text-text-soft text-[13px]"><span>Retry Logic</span><strong class="text-warning">Medium</strong></div>
-      <div class="flex justify-between text-text-soft text-[13px]"><span>Auth Impact</span><strong class="text-success">None</strong></div>
-      <div class="flex justify-between text-text-soft text-[13px]"><span>Test Coverage</span><strong class="text-success">87.3%</strong></div>
-      <div class="flex justify-between text-text-soft text-[13px]"><span>Observability</span><strong class="text-warning">Gap</strong></div>
-      <div class="flex justify-between text-text-soft text-[13px]"><span>Config Change</span><strong class="text-warning">Yes</strong></div>
-    </div>
+    <% else %>
+      <p class="text-text-muted text-[13px]">No high-risk changes detected.</p>
+    <% end %>
   <% end %>
 </div>
+
+<%# AI Council — the reviewer's verdict, front and centre %>
+<%= render "council" %>
 
 <%# Version Timeline %>
-<%= card(title: "Version Timeline", classes: "mb-4") do %>
+<%= card(title: "Version Timeline", classes: "mt-4 mb-4") do %>
   <% if @versions.any? %>
     <div class="space-y-3">
       <% @versions.each do |version| %>
@@ -171,7 +113,7 @@
           </div>
           <p class="text-text-muted text-[11px] m-0">
             <% if version.agent_session %>
-              Session: <span class="font-semibold text-text-soft"><%= version.agent_session.agent_name %></span>
+              Session: <%= link_to version.agent_session.agent_name, run_path(version.agent_session), class: "font-semibold text-primary no-underline hover:underline" %>
               &middot; <%= version.agent_session.started_at&.strftime("%b %d, %H:%M") %>
               <% if version.duration_minutes %>&middot; <%= version.duration_minutes %> min<% end %>
             <% else %>
@@ -190,30 +132,10 @@
   <% end %>
 <% end %>
 
-<%# AI Council %>
-<%= render "council" %>
-
 <%# Bottom Row %>
-<div class="grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-4 max-xl:grid-cols-1">
+<div class="grid grid-cols-[1.4fr_1fr_1fr] gap-4 max-xl:grid-cols-1">
   <%= card(title: "AI Summary") do %>
     <p class="text-text-soft text-sm leading-[1.7]"><%= @passport.summary %></p>
-    <div class="flex flex-wrap gap-2 mt-[18px]">
-      <% ["retry-logic", "idempotency", "observability", "callback-handler", "structured-logging"].each do |tag| %>
-        <span class="py-[7px] px-2.5 border border-panel-border rounded-full bg-bg text-text-soft text-xs font-bold"><%= tag %></span>
-      <% end %>
-    </div>
-  <% end %>
-
-  <%= card(title: "Suggested PR Summary") do %>
-    <div class="text-text-soft text-sm leading-[1.7] space-y-2">
-      <p class="font-bold text-text-primary">Harden inference callback retry path</p>
-      <ul class="list-disc list-inside space-y-1 text-[13px]">
-        <li>Replace fixed retry with exponential backoff (max 5 attempts)</li>
-        <li>Add idempotency key check to prevent duplicate callback processing</li>
-        <li>Add correlation ID to structured logs across callback pipeline</li>
-        <li>12 new test cases covering retry edge cases</li>
-      </ul>
-    </div>
   <% end %>
 
   <%= card(title: "Reviewer Checklist") do %>

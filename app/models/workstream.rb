@@ -63,7 +63,15 @@ class Workstream < ApplicationRecord
     update!(status: "merged", merged_at: Time.current)
   end
 
+  # Branch names arrive from clients and have drifted in the wild (whitespace,
+  # refs/heads/ prefixes). Every lookup MUST go through this or near-identical
+  # names mint duplicate workstreams — and therefore duplicate passports.
+  def self.normalize_branch(raw)
+    raw.to_s.strip.delete_prefix("refs/heads/")
+  end
+
   def self.find_or_create_for_branch(project:, branch_name:)
+    branch_name = normalize_branch(branch_name)
     find_or_create_by!(project: project, branch_name: branch_name) do |ws|
       ws.status = "active"
       ws.title = branch_name.gsub(/[-_\/]/, " ").gsub(/\b\w/, &:upcase)

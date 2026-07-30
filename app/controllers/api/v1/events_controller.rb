@@ -24,7 +24,7 @@ module Api
         ) do |s|
           s.provider = params[:provider] || "claude_code"
           s.agent_name = params[:agent_name] || "Claude Code"
-          s.branch_name = params[:branch_name]
+          s.branch_name = Workstream.normalize_branch(params[:branch_name])
           s.status = "active"
           s.started_at = Time.current
           s.project = token_project

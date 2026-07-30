@@ -235,7 +235,7 @@ module Api
         # The branch is computed client-side (the server has no working tree) and
         # sent as branch_name. The old cwd git shell-out here could never work
         # remotely and was a command-injection surface.
-        params[:branch_name].presence || "unknown"
+        Workstream.normalize_branch(params[:branch_name]).presence || "unknown"
       end
 
       def project_name

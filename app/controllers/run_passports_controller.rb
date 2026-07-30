@@ -7,7 +7,6 @@ class RunPassportsController < ApplicationController
   end
 
   def show
-    @events = @passport.workstream.run_events.order(occurred_at: :asc)
     @versions = @passport.passport_versions.includes(:agent_session).latest_first
     @council_reviews = @passport.council_reviews.ordered
   end

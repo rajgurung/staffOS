@@ -11,6 +11,17 @@ class WorkstreamTest < ActiveSupport::TestCase
     assert_equal "Rr 553 Ai Hardening", a.title
   end
 
+  test "find_or_create_for_branch normalizes drifted branch names" do
+    project = make_project
+    a = Workstream.find_or_create_for_branch(project: project, branch_name: "feature/noise-filter")
+    b = Workstream.find_or_create_for_branch(project: project, branch_name: "feature/noise-filter\n")
+    c = Workstream.find_or_create_for_branch(project: project, branch_name: "refs/heads/feature/noise-filter")
+    d = Workstream.find_or_create_for_branch(project: project, branch_name: "  feature/noise-filter  ")
+
+    assert_equal [a.id], [b, c, d].map(&:id).uniq
+    assert_equal 1, project.workstreams.count
+  end
+
   test "branch names are unique within a project but not across projects" do
     p1 = make_project(name: "One", repo_name: "org/one")
     p2 = make_project(name: "Two", repo_name: "org/two")

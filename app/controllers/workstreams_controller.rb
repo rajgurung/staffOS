@@ -9,11 +9,9 @@ class WorkstreamsController < ApplicationController
   def show
     @sessions = @workstream.agent_sessions.order(started_at: :desc)
     @passport = @workstream.run_passport
-    @versions = @passport&.passport_versions&.includes(:agent_session)&.latest_first || []
     @events = @workstream.run_events.order(occurred_at: :desc).limit(20)
     @documents = @workstream.documents
     @decisions = @workstream.decision_logs
-    @council_reviews = @passport&.council_reviews&.ordered || []
     @files = @workstream.all_files_touched
   end
 
