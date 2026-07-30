@@ -6,8 +6,10 @@ unless Rails.env.development?
   return
 end
 
-# Default users
-owner = User.find_or_create_by!(email: "raj@staffos.dev") { |u| u.name = "Raj Gurung"; u.password = "password123"; u.password_confirmation = "password123" }
+# Default users. All demo data is owned by SEED_OWNER_EMAIL when set (created
+# with password "password123" if missing), else by the raj@staffos.dev demo user.
+owner_email = ENV["SEED_OWNER_EMAIL"].presence || "raj@staffos.dev"
+owner = User.find_or_create_by!(email: owner_email) { |u| u.name = "Raj Gurung"; u.password = "password123"; u.password_confirmation = "password123" }
 User.find_or_create_by!(email: "raj@local.dev") { |u| u.name = "Raj"; u.password = "staffos123"; u.password_confirmation = "staffos123" }
 
 # Projects (owned by the demo user)
@@ -25,19 +27,24 @@ Project.find_or_create_by!(name: "StaffOS Platform") do |p|
   p.risk_rules = { "auth_files" => "high", "migration" => "high", "config" => "medium" }
 end
 
+# Re-running with a different SEED_OWNER_EMAIL adopts the existing demo projects.
+Project.where(name: ["AI Peer Review Pipeline", "StaffOS Platform"]).where.not(user: owner).update_all(user_id: owner.id)
+
 ApiToken.find_or_create_by!(name: "CLI Token") { |t| t.project = project }
 
-# Helper to seed an agent session and its run events
-def seed_session(project:, ws:, branch_name:, session_id:, started_ago:, duration_minutes:, model:, tokens:, events_data:)
+# Helper to seed an agent session and its run events. Events default to the
+# session's workstream but can override it per-event (ed[:workstream]) to model
+# branch-hopping sessions. status: "active" leaves the session in flight.
+def seed_session(project:, ws:, branch_name:, session_id:, started_ago:, duration_minutes:, model:, tokens:, events_data:, status: "completed")
   session = AgentSession.find_or_create_by!(external_session_id: session_id) do |s|
     s.project = project
     s.workstream = ws
     s.provider = "claude_code"
     s.agent_name = "Claude Code"
     s.branch_name = branch_name
-    s.status = "completed"
+    s.status = status
     s.started_at = started_ago
-    s.completed_at = started_ago + duration_minutes.minutes
+    s.completed_at = status == "completed" ? started_ago + duration_minutes.minutes : nil
     s.metadata = { model: model, tokens_used: tokens }
   end
 
@@ -46,7 +53,7 @@ def seed_session(project:, ws:, branch_name:, session_id:, started_ago:, duratio
     RunEvent.find_or_create_by!(agent_session: session, event_type: ed[:event_type], occurred_at: base + ed[:offset].seconds) do |e|
       e.payload = ed[:payload]
       e.source = "claude_code"
-      e.workstream = ws
+      e.workstream = ed[:workstream] || ws
     end
   end
 
@@ -208,7 +215,7 @@ ws1 = seed_workstream(
 )
 
 # ── Workstream 2: OAuth token refresh ──
-seed_workstream(
+ws2 = seed_workstream(
   project: project, branch_name: "fix/oauth-token-refresh",
   title: "Fix OAuth token refresh race condition", description: "Concurrent token refresh requests causing 401 cascades in the inference pipeline.",
   status: "active", session_id: "demo-session-002", started_ago: 5.hours.ago, duration_minutes: 8, tokens: 32100,
@@ -298,7 +305,7 @@ seed_workstream(
 )
 
 # ── Workstream 4: Structured logging (merged) ──
-seed_workstream(
+ws4 = seed_workstream(
   project: project, branch_name: "feature/structured-logging",
   title: "Add structured logging with correlation IDs", description: "Replace unstructured log lines with JSON structured logs and propagate correlation IDs across service boundaries.",
   status: "merged", merged_at: 3.days.ago,
@@ -367,4 +374,174 @@ MemoryItem.find_or_create_by!(content: "Service orchestration is preferred over 
 MemoryItem.find_or_create_by!(content: "All external callbacks need idempotency protection. Retry behaviour must have tests.") { |m| m.project = project; m.memory_type = "constraint"; m.confidence = 1.0 }
 MemoryItem.find_or_create_by!(content: "AI workflow logs need correlation ID for tracing across service boundaries.") { |m| m.project = project; m.memory_type = "pattern"; m.confidence = 0.85 }
 
-puts "Seeded: #{Project.count} projects, #{Workstream.count} workstreams, #{AgentSession.count} sessions, #{RunEvent.count} events, #{RunPassport.count} passports, #{PassportVersion.count} versions, #{CouncilReview.count} council reviews, #{Document.count} documents, #{DecisionLog.count} decisions, #{MemoryItem.count} memory items"
+# ── Branch coverage: ws1 has unobserved changes (warning line + honest gap),
+# ws4 is fully observed (green line) ──
+ws1[:passport].update!(branch_coverage: {
+  "observed" => 5, "branch_files" => 7,
+  "unobserved_paths" => ["app/models/callback_receipt.rb", "db/migrate/20260712_add_callback_receipts.rb"]
+})
+ws4[:passport].update!(branch_coverage: { "observed" => 4, "branch_files" => 4, "unobserved_paths" => [] })
+
+# ── Multi-branch session: started on rr-553 but hopped to the oauth branch
+# mid-flight (fixing an api_client conflict), so it fed BOTH passports.
+# Exercises the session page's per-branch passport grid + hop chips. ──
+multi = seed_session(
+  project: project, ws: ws1[:workstream], branch_name: "rr-553-ai-hardening",
+  session_id: "demo-session-005", started_ago: 35.minutes.ago, duration_minutes: 12,
+  model: "claude-sonnet-4-20250514", tokens: 39600,
+  events_data: [
+    { event_type: "session_started", offset: 0, payload: { branch: "rr-553-ai-hardening", model: "claude-sonnet-4-20250514" } },
+    { event_type: "prompt_submitted", offset: 25, payload: { prompt: "Wire the retry handler's correlation IDs through api_client. If the oauth branch conflicts, fix it there directly." } },
+    { event_type: "file_read", offset: 60, payload: { file: "app/services/inference_callback_handler.rb", lines: 158 } },
+    { event_type: "file_edited", offset: 150, payload: { file: "app/services/inference_callback_handler.rb", additions: 9, deletions: 2 } },
+    { event_type: "command_run", offset: 210, payload: { command: "git switch fix/oauth-token-refresh", exit_code: 0 } },
+    { event_type: "file_edited", offset: 280, payload: { file: "app/services/api_client.rb", additions: 11, deletions: 4 }, workstream: ws2[:workstream] },
+    { event_type: "command_run", offset: 340, payload: { command: "bundle exec rspec spec/services/api_client_spec.rb", exit_code: 0, examples: 14, failures: 0 }, workstream: ws2[:workstream] },
+    { event_type: "command_run", offset: 380, payload: { command: "git switch rr-553-ai-hardening", exit_code: 0 } },
+    { event_type: "file_edited", offset: 450, payload: { file: "spec/services/inference_callback_handler_spec.rb", additions: 12, deletions: 0 } },
+    { event_type: "command_run", offset: 520, payload: { command: "bundle exec rspec", exit_code: 0, examples: 168, failures: 0 } },
+    { event_type: "agent_response", offset: 660, payload: { summary: "Correlation IDs wired through api_client; conflicting oauth-branch change fixed in place. Both branches green." } },
+    { event_type: "session_completed", offset: 700, payload: { duration_seconds: 700, files_changed: 3 } }
+  ]
+)
+[ws1, ws2].each do |h|
+  h[:passport].create_version!(trigger: "session_completed", agent_session: multi) unless h[:passport].passport_versions.exists?(agent_session: multi)
+end
+
+# ── Workstream 5: brand-new branch, session still in flight, NO passport yet.
+# Exercises the dashboard Active Runs panel and the workstream page without a
+# passport strip. ──
+ws5 = Workstream.find_or_create_for_branch(project: project, branch_name: "feature/model-fallback-chain")
+ws5.update!(title: "Model fallback chain", description: "Fall back to a secondary model provider when the primary times out twice in a row.", status: "active")
+seed_session(
+  project: project, ws: ws5, branch_name: "feature/model-fallback-chain",
+  session_id: "demo-session-006", started_ago: 7.minutes.ago, duration_minutes: 0, status: "active",
+  model: "claude-sonnet-4-20250514", tokens: 8400,
+  events_data: [
+    { event_type: "session_started", offset: 0, payload: { branch: "feature/model-fallback-chain", model: "claude-sonnet-4-20250514" } },
+    { event_type: "prompt_submitted", offset: 20, payload: { prompt: "Add a fallback chain: if the primary model times out twice, route to the secondary provider." } },
+    { event_type: "file_read", offset: 55, payload: { file: "app/services/ai_provider_client.rb", lines: 203 } },
+    { event_type: "file_read", offset: 90, payload: { file: "config/initializers/providers.rb", lines: 31 } },
+    { event_type: "file_edited", offset: 240, payload: { file: "app/services/ai_provider_client.rb", additions: 17, deletions: 3 } },
+    { event_type: "file_edited", offset: 350, payload: { file: "app/services/provider_fallback.rb", additions: 29, deletions: 0 } }
+  ]
+)
+
+# ── Workstream 6: archived housekeeping branch — exercises the Archived filter
+# and a quiet low-risk passport with no council. ──
+seed_workstream(
+  project: project, branch_name: "chore/dependency-bumps",
+  title: "Quarterly dependency bumps", description: "Routine gem updates: rails patch, rubocop, faraday.",
+  status: "archived", session_id: "demo-session-007", started_ago: 12.days.ago, duration_minutes: 4, tokens: 9200,
+  intent: "Bump outdated gems and fix any deprecation warnings",
+  summary: "Updated 9 gems (all patch/minor). Fixed two deprecation warnings in the Faraday middleware setup. Full suite green.",
+  risk_level: "Low", readiness: 88, review_required: false,
+  test_summary: { "status" => "passed", "total" => 134, "passed" => 134, "failed" => 0, "new_tests" => 0 },
+  files_touched: [
+    { "path" => "Gemfile", "category" => "config", "additions" => 9, "deletions" => 9 },
+    { "path" => "Gemfile.lock", "category" => "config", "additions" => 61, "deletions" => 58 },
+    { "path" => "config/initializers/faraday.rb", "category" => "config", "additions" => 4, "deletions" => 6 }
+  ],
+  missing_checks: [{ "check" => "Dependency files changed — run bundler-audit", "severity" => "medium" }],
+  recommended_actions: [{ "action" => "Run bundler-audit before merge", "priority" => "medium" }],
+  events_data: [
+    { event_type: "session_started", offset: 0, payload: { branch: "chore/dependency-bumps", model: "claude-sonnet-4-20250514" } },
+    { event_type: "prompt_submitted", offset: 15, payload: { prompt: "Bump outdated gems and fix any deprecation warnings." } },
+    { event_type: "command_run", offset: 40, payload: { command: "bundle outdated", exit_code: 0 } },
+    { event_type: "file_edited", offset: 90, payload: { file: "Gemfile", additions: 9, deletions: 9 } },
+    { event_type: "command_run", offset: 130, payload: { command: "bundle update --conservative", exit_code: 0 } },
+    { event_type: "file_edited", offset: 180, payload: { file: "config/initializers/faraday.rb", additions: 4, deletions: 6 } },
+    { event_type: "command_run", offset: 220, payload: { command: "bundle exec rspec", exit_code: 0, examples: 134, failures: 0 } },
+    { event_type: "session_completed", offset: 240, payload: { duration_seconds: 240, files_changed: 3 } }
+  ]
+)
+
+# ── Workstream 7: red path — failing tests, blocked merge. Exercises the
+# danger states: Failed tests card, red event dots, low readiness. ──
+seed_workstream(
+  project: project, branch_name: "fix/flaky-payment-spec",
+  title: "Fix flaky payment capture spec", description: "payment_capture_spec fails intermittently under parallel test runs; suspect shared Redis state.",
+  status: "active", session_id: "demo-session-008", started_ago: 45.minutes.ago, duration_minutes: 11, tokens: 27300,
+  intent: "Make payment_capture_spec deterministic under parallel runs",
+  summary: "Isolated the shared Redis fixture per test process and froze time around capture-window assertions. Two failures remain in the concurrent refund path — the underlying race in RefundProcessor is still unresolved.",
+  risk_level: "High", readiness: 38, review_required: true,
+  test_summary: { "status" => "failed", "total" => 156, "passed" => 154, "failed" => 2, "new_tests" => 3 },
+  files_touched: [
+    { "path" => "spec/services/payment_capture_spec.rb", "category" => "test", "additions" => 26, "deletions" => 14 },
+    { "path" => "spec/support/redis_isolation.rb", "category" => "test", "additions" => 18, "deletions" => 0 },
+    { "path" => "app/services/refund_processor.rb", "category" => "service", "additions" => 6, "deletions" => 2 }
+  ],
+  missing_checks: [
+    { "check" => "2 tests still failing in concurrent refund path", "severity" => "high" },
+    { "check" => "Payment-related files modified", "severity" => "high" },
+    { "check" => "Race condition in RefundProcessor not root-caused", "severity" => "high" }
+  ],
+  recommended_actions: [
+    { "action" => "Root-cause the RefundProcessor race before merge", "priority" => "high" },
+    { "action" => "Re-run suite 10x in parallel to confirm determinism", "priority" => "high" },
+    { "action" => "PCI review for refund path change", "priority" => "medium" }
+  ],
+  events_data: [
+    { event_type: "session_started", offset: 0, payload: { branch: "fix/flaky-payment-spec", model: "claude-sonnet-4-20250514" } },
+    { event_type: "prompt_submitted", offset: 20, payload: { prompt: "payment_capture_spec fails intermittently in CI parallel runs. Find and fix the flakiness." } },
+    { event_type: "file_read", offset: 50, payload: { file: "spec/services/payment_capture_spec.rb", lines: 210 } },
+    { event_type: "command_run", offset: 110, payload: { command: "bundle exec rspec spec/services/payment_capture_spec.rb", exit_code: 0, examples: 21, failures: 0 } },
+    { event_type: "command_failed", offset: 200, payload: { command: "PARALLEL_WORKERS=4 bundle exec rspec spec/services/payment_capture_spec.rb", exit_code: 1, examples: 21, failures: 3 } },
+    { event_type: "file_edited", offset: 290, payload: { file: "spec/support/redis_isolation.rb", additions: 18, deletions: 0 } },
+    { event_type: "file_edited", offset: 360, payload: { file: "spec/services/payment_capture_spec.rb", additions: 26, deletions: 14 } },
+    { event_type: "file_edited", offset: 420, payload: { file: "app/services/refund_processor.rb", additions: 6, deletions: 2 } },
+    { event_type: "command_failed", offset: 500, payload: { command: "PARALLEL_WORKERS=4 bundle exec rspec", exit_code: 1, examples: 156, failures: 2 } },
+    { event_type: "agent_response", offset: 620, payload: { summary: "Redis state isolated per process; capture-window assertions frozen. 2 concurrent-refund failures remain — RefundProcessor race unresolved." } },
+    { event_type: "session_completed", offset: 660, payload: { duration_seconds: 660, files_changed: 3 } }
+  ]
+)
+
+# ── Noise session: helper-process residue, hidden everywhere except
+# /runs?status=noise. No workstream, no passport impact. ──
+AgentSession.find_or_create_by!(external_session_id: "demo-session-noise-001") do |s|
+  s.project = project
+  s.workstream = nil
+  s.provider = "claude_code"
+  s.agent_name = "Claude Code"
+  s.branch_name = "rr-553-ai-hardening"
+  s.status = "noise"
+  s.started_at = 3.hours.ago
+  s.completed_at = 3.hours.ago + 40.seconds
+  s.metadata = { model: "claude-haiku-4-5-20251001", tokens_used: 900 }
+end
+
+# ── Second project: StaffOS Platform gets its own small story so the project
+# switcher shows genuinely different data. ──
+platform = Project.find_by!(name: "StaffOS Platform")
+seed_workstream(
+  project: platform, branch_name: "feature/dark-mode",
+  title: "Dual-theme design system", description: "Token-level light/dark theming with a persisted topbar toggle.",
+  status: "in_review", session_id: "platform-session-001", started_ago: 6.hours.ago, duration_minutes: 14, tokens: 61200,
+  intent: "Add a dark theme with a topbar toggle, no flash on first paint",
+  summary: "Rebuilt the token layer as themed custom properties resolved at runtime, added a pre-paint boot script reading cookie/localStorage/OS preference, and a Stimulus toggle in the topbar. Both themes verified across all pages.",
+  risk_level: "Low", readiness: 91, review_required: false,
+  test_summary: { "status" => "passed", "total" => 68, "passed" => 68, "failed" => 0, "new_tests" => 1 },
+  files_touched: [
+    { "path" => "app/assets/tailwind/application.css", "category" => "other", "additions" => 214, "deletions" => 96 },
+    { "path" => "app/javascript/controllers/theme_controller.js", "category" => "other", "additions" => 28, "deletions" => 0 },
+    { "path" => "app/views/shared/_head_common.html.erb", "category" => "view", "additions" => 19, "deletions" => 0 },
+    { "path" => "app/views/shared/_topbar.html.erb", "category" => "view", "additions" => 8, "deletions" => 4 }
+  ],
+  missing_checks: [],
+  recommended_actions: [{ "action" => "Spot-check charts and rings on dark once real data lands", "priority" => "low" }],
+  events_data: [
+    { event_type: "session_started", offset: 0, payload: { branch: "feature/dark-mode", model: "claude-sonnet-4-20250514" } },
+    { event_type: "prompt_submitted", offset: 15, payload: { prompt: "Add a dark theme with a topbar toggle. No flash of the wrong theme on first paint." } },
+    { event_type: "file_read", offset: 40, payload: { file: "app/assets/tailwind/application.css", lines: 257 } },
+    { event_type: "file_edited", offset: 200, payload: { file: "app/assets/tailwind/application.css", additions: 214, deletions: 96 } },
+    { event_type: "file_edited", offset: 380, payload: { file: "app/javascript/controllers/theme_controller.js", additions: 28, deletions: 0 } },
+    { event_type: "file_edited", offset: 470, payload: { file: "app/views/shared/_head_common.html.erb", additions: 19, deletions: 0 } },
+    { event_type: "file_edited", offset: 540, payload: { file: "app/views/shared/_topbar.html.erb", additions: 8, deletions: 4 } },
+    { event_type: "command_run", offset: 600, payload: { command: "bin/rails tailwindcss:build && bin/rails test", exit_code: 0, examples: 68, failures: 0 } },
+    { event_type: "agent_response", offset: 780, payload: { summary: "Dual-theme token system live: runtime vars, boot script, persisted toggle. All tests green." } },
+    { event_type: "session_completed", offset: 840, payload: { duration_seconds: 840, files_changed: 4 } }
+  ],
+  run_council: true
+)
+
+puts "Seeded: #{Project.count} projects, #{Workstream.count} workstreams, #{AgentSession.count} sessions (#{AgentSession.where(status: 'active').count} active, #{AgentSession.where(status: 'noise').count} noise), #{RunEvent.count} events, #{RunPassport.count} passports, #{PassportVersion.count} versions, #{CouncilReview.count} council reviews, #{Document.count} documents, #{DecisionLog.count} decisions, #{MemoryItem.count} memory items"
