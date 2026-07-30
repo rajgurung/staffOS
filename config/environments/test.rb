@@ -31,6 +31,13 @@ Rails.application.configure do
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
 
+  # CI runs without RAILS_MASTER_KEY (no credentials), so give Active Record
+  # encryption fixed throwaway keys — encrypted attributes (user API keys)
+  # must work in tests everywhere.
+  config.active_record.encryption.primary_key = "test-primary-key-not-a-secret-000"
+  config.active_record.encryption.deterministic_key = "test-deterministic-key-000000000"
+  config.active_record.encryption.key_derivation_salt = "test-key-derivation-salt-0000000"
+
   # Tell Action Mailer not to deliver emails to the real world.
   # The :test delivery method accumulates sent emails in the
   # ActionMailer::Base.deliveries array.

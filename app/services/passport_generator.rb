@@ -66,7 +66,7 @@ class PassportGenerator
   # enriches the narrative summary, intent, and missing checks only. Returns
   # true when the LLM was actually used, false when it fell back to heuristics.
   def apply_smart_summary!(passport)
-    client = LlmClient.new(model: LlmClient::SUMMARY_MODEL)
+    client = LlmClient.new(model: LlmClient::SUMMARY_MODEL, api_key: LlmClient.key_for(@workstream.project.user))
     return false unless client.enabled?
 
     result = client.complete(
