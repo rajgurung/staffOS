@@ -71,10 +71,10 @@ class RunPassportsController < ApplicationController
   private
 
   def council_notice
-    if LlmClient.enabled?
+    if LlmClient.enabled_for?(@passport.workstream.project.user)
       "AI Council review completed (#{LlmClient::COUNCIL_MODEL})."
     else
-      "Council review completed using StaffOS heuristics. Add an ANTHROPIC_API_KEY to enable AI reviewers."
+      "Council review completed using StaffOS heuristics. Add your Anthropic API key in Settings to enable AI reviewers."
     end
   end
 

@@ -11,4 +11,14 @@ class User < ApplicationRecord
 
   # Deleting a user with projects is blocked — reassign the projects first.
   has_many :projects, dependent: :restrict_with_error
+
+  # Each account brings its own Anthropic key; council/summary calls for a
+  # project bill the project owner's key, never a shared server key.
+  encrypts :anthropic_api_key
+  validates :anthropic_api_key, format: { with: /\Ask-ant-/, message: "should start with sk-ant-" }, allow_blank: true
+
+  def anthropic_key_hint
+    return nil if anthropic_api_key.blank?
+    "sk-ant-…#{anthropic_api_key.last(4)}"
+  end
 end

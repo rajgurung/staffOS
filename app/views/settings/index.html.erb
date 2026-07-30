@@ -19,6 +19,31 @@
     <% end %>
   <% end %>
 
+  <%# AI Reviewers — bring-your-own Anthropic key %>
+  <%= card(title: "AI Reviewers") do %>
+    <p class="text-text-soft text-[13px] mb-3 m-0">
+      AI Council and Smart Summary run on <span class="font-semibold">your</span> Anthropic API key
+      (<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" class="text-primary no-underline hover:underline">console.anthropic.com</a>).
+      Only passport metadata is ever sent &mdash; never source code. Without a key, reviews fall back to deterministic heuristics.
+    </p>
+    <% if @user.anthropic_api_key.present? %>
+      <div class="flex items-center justify-between p-3 rounded-md bg-success-soft border border-success/10 mb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2 h-2 rounded-full bg-success"></span>
+          <code class="text-[12px] text-text-primary"><%= @user.anthropic_key_hint %></code>
+        </div>
+        <%= button_to "Remove", update_api_key_settings_path(remove: true), method: :patch,
+              class: "h-7 px-3 rounded-md btn-secondary text-[11px] font-semibold cursor-pointer",
+              data: { turbo_confirm: "Remove your API key? AI reviewers will fall back to heuristics." } %>
+      </div>
+    <% end %>
+    <%= form_tag update_api_key_settings_path, method: :patch, class: "flex gap-2" do %>
+      <input type="password" name="user[anthropic_api_key]" placeholder="<%= @user.anthropic_api_key.present? ? 'Replace key: sk-ant-…' : 'sk-ant-…' %>"
+             autocomplete="off" class="input h-9 flex-1" />
+      <button type="submit" class="h-9 px-4 rounded-md btn-primary text-[12px] font-semibold border-0 cursor-pointer shrink-0">Save</button>
+    <% end %>
+  <% end %>
+
   <%# Integration Status %>
   <%= card(title: "Integrations") do %>
     <div class="space-y-3">

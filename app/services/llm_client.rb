@@ -28,18 +28,31 @@ class LlmClient
       api_key.present?
     end
 
+    # Server-wide fallback key (dev/demo convenience). Per-user keys take
+    # precedence — see key_for.
     def api_key
       ENV["ANTHROPIC_API_KEY"].presence ||
         Rails.application.credentials.dig(:anthropic, :api_key)
     end
+
+    # The key that pays for work on this user's behalf: their own key first,
+    # the server fallback second.
+    def key_for(user)
+      user&.anthropic_api_key.presence || api_key
+    end
+
+    def enabled_for?(user)
+      key_for(user).present?
+    end
   end
 
-  def initialize(model: SUMMARY_MODEL)
+  def initialize(model: SUMMARY_MODEL, api_key: nil)
     @model = model
+    @api_key = api_key || self.class.api_key
   end
 
   def enabled?
-    self.class.enabled?
+    @api_key.present?
   end
 
   # Returns a Result, or nil if the client is disabled or the call fails.
@@ -66,7 +79,7 @@ class LlmClient
   private
 
   def client
-    @client ||= Anthropic::Client.new(api_key: self.class.api_key)
+    @client ||= Anthropic::Client.new(api_key: @api_key)
   end
 
   def build_result(message, schema)

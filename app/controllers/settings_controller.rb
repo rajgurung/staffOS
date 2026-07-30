@@ -19,6 +19,19 @@ class SettingsController < ApplicationController
     end
   end
 
+  # Set or remove the user's own Anthropic key. The key is write-only from the
+  # UI: it is never rendered back, only a masked hint.
+  def update_api_key
+    if params[:remove].present?
+      current_user.update!(anthropic_api_key: nil)
+      redirect_to settings_path, notice: "Anthropic API key removed. AI reviewers fall back to heuristics."
+    elsif current_user.update(anthropic_api_key: params.dig(:user, :anthropic_api_key).to_s.strip)
+      redirect_to settings_path, notice: "Anthropic API key saved. AI Council and Smart Summary now use your key."
+    else
+      redirect_to settings_path, alert: current_user.errors.full_messages.to_sentence
+    end
+  end
+
   private
 
   def profile_params

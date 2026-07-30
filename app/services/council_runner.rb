@@ -13,6 +13,8 @@ class CouncilRunner
 
   def initialize(passport)
     @passport = passport
+    # Councils bill the project owner's key, not a shared server key.
+    @api_key = LlmClient.key_for(passport.workstream.project.user)
   end
 
   def run!
@@ -54,7 +56,7 @@ class CouncilRunner
   end
 
   def llm_review(persona)
-    client = LlmClient.new(model: LlmClient::COUNCIL_MODEL)
+    client = LlmClient.new(model: LlmClient::COUNCIL_MODEL, api_key: @api_key)
     return nil unless client.enabled?
 
     result = client.complete(

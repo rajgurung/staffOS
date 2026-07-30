@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   get "connect/script", to: "connect#script", as: :connect_script
   get "settings", to: "settings#index", as: :settings
   patch "settings/profile", to: "settings#update_profile", as: :update_profile_settings
+  patch "settings/api_key", to: "settings#update_api_key", as: :update_api_key_settings
 
   resources :workstreams, only: [:index, :show, :edit, :update] do
     member do
