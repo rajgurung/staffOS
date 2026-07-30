@@ -13,7 +13,8 @@ class User < ApplicationRecord
   has_many :projects, dependent: :restrict_with_error
 
   # Each account brings its own Anthropic key; council/summary calls for a
-  # project bill the project owner's key, never a shared server key.
+  # project prefer the project owner's key (server ANTHROPIC_API_KEY is the
+  # fallback — see LlmClient.key_for).
   encrypts :anthropic_api_key
   validate :anthropic_api_key_looks_valid
 
