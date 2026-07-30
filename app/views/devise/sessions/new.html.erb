@@ -1,17 +1,17 @@
-<h2 class="text-lg font-[700] tracking-[-0.03em] mb-5">Sign in to StaffOS</h2>
+<h2 class="heading-2 mb-5">Sign in to StaffOS</h2>
 
 <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-4" }) do |f| %>
   <div>
-    <label class="block text-text-soft text-[12px] font-medium mb-1">Email</label>
+    <label class="label">Email</label>
     <%= f.email_field :email, autofocus: true, autocomplete: "email",
-      class: "w-full h-9 px-3 border border-panel-border rounded-md bg-bg text-[13px] text-text-primary placeholder:text-text-muted outline-none",
+      class: "input h-9",
       placeholder: "you@example.com" %>
   </div>
 
   <div>
-    <label class="block text-text-soft text-[12px] font-medium mb-1">Password</label>
+    <label class="label">Password</label>
     <%= f.password_field :password, autocomplete: "current-password",
-      class: "w-full h-9 px-3 border border-panel-border rounded-md bg-bg text-[13px] text-text-primary placeholder:text-text-muted outline-none",
+      class: "input h-9",
       placeholder: "Your password" %>
   </div>
 
@@ -23,7 +23,7 @@
   <% end %>
 
   <div>
-    <%= f.submit "Sign in", class: "w-full h-9 rounded-md btn-primary text-[13px] font-semibold cursor-pointer border-0" %>
+    <%= f.submit "Sign in", class: "btn-primary w-full h-9 text-[13px]" %>
   </div>
 <% end %>
 

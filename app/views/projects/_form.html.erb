@@ -5,22 +5,22 @@
     </div>
   <% end %>
   <div>
-    <label class="block text-text-soft text-[12px] font-medium mb-1">Project Name</label>
-    <%= f.text_field :name, class: "w-full h-9 px-3 border border-panel-border rounded-md bg-white text-[13px] text-text-primary placeholder:text-text-muted outline-none", placeholder: "My Project" %>
+    <label class="label">Project Name</label>
+    <%= f.text_field :name, class: "input h-9", placeholder: "My Project" %>
   </div>
   <div>
-    <label class="block text-text-soft text-[12px] font-medium mb-1">Repository</label>
-    <%= f.text_field :repo_name, class: "w-full h-9 px-3 border border-panel-border rounded-md bg-white text-[13px] text-text-primary placeholder:text-text-muted outline-none", placeholder: "org/repo" %>
+    <label class="label">Repository</label>
+    <%= f.text_field :repo_name, class: "input h-9", placeholder: "org/repo" %>
   </div>
   <div>
-    <label class="block text-text-soft text-[12px] font-medium mb-1">Tech Stack (comma-separated)</label>
-    <%= f.text_field :tech_stack, class: "w-full h-9 px-3 border border-panel-border rounded-md bg-white text-[13px] text-text-primary placeholder:text-text-muted outline-none", placeholder: "Ruby on Rails, PostgreSQL, Redis" %>
+    <label class="label">Tech Stack (comma-separated)</label>
+    <%= f.text_field :tech_stack, class: "input h-9", placeholder: "Ruby on Rails, PostgreSQL, Redis" %>
   </div>
 
   <%# Risk Rules Editor %>
   <div data-controller="risk-rules">
-    <label class="block text-text-soft text-[12px] font-medium mb-2">Risk Rules</label>
-    <div class="border border-panel-border rounded-md bg-white p-3">
+    <label class="label">Risk Rules</label>
+    <div class="border border-panel-border rounded-md bg-panel-solid p-3">
       <div data-risk-rules-target="list">
         <% (project.risk_rules || {}).each do |pattern, level| %>
           <div class="flex items-center gap-2 py-2 border-b border-panel-border last:border-0">
@@ -45,6 +45,6 @@
 
   <div class="flex gap-3">
     <%= f.submit class: "h-9 px-5 rounded-md btn-primary text-[12px] font-semibold cursor-pointer border-0" %>
-    <%= link_to "Cancel", projects_path, class: "h-9 px-4 border border-panel-border rounded-md bg-white text-text-primary text-[12px] font-semibold inline-flex items-center no-underline hover:bg-bg" %>
+    <%= link_to "Cancel", projects_path, class: "btn-secondary h-9" %>
   </div>
 <% end %>

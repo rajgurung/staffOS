@@ -5,26 +5,26 @@
     </div>
   <% end %>
   <div>
-    <label class="block text-text-soft text-sm font-bold mb-2">Type</label>
+    <label class="label">Type</label>
     <%= f.select :memory_type, MemoryItem::TYPES.map { |t| [t.capitalize, t] },
-      {}, class: "w-full h-11 px-3 border border-panel-border rounded-sm bg-white text-text-primary outline-none focus:border-primary/40" %>
+      {}, class: "input h-11" %>
   </div>
   <div>
-    <label class="block text-text-soft text-sm font-bold mb-2">Content</label>
-    <%= f.text_area :content, rows: 8, class: "w-full p-4 border border-panel-border rounded-sm bg-white text-text-soft text-sm placeholder:text-text-muted outline-none focus:border-primary/40 resize-y", placeholder: "What should be remembered?" %>
+    <label class="label">Content</label>
+    <%= f.text_area :content, rows: 8, class: "input resize-y", placeholder: "What should be remembered?" %>
   </div>
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <label class="block text-text-soft text-sm font-bold mb-2">Confidence (0-1)</label>
-      <%= f.number_field :confidence, step: 0.1, min: 0, max: 1, class: "w-full h-11 px-3 border border-panel-border rounded-sm bg-white text-text-primary outline-none focus:border-primary/40" %>
+      <label class="label">Confidence (0-1)</label>
+      <%= f.number_field :confidence, step: 0.1, min: 0, max: 1, class: "input h-11" %>
     </div>
     <div>
-      <label class="block text-text-soft text-sm font-bold mb-2">Expires At</label>
-      <%= f.datetime_local_field :expires_at, class: "w-full h-11 px-3 border border-panel-border rounded-sm bg-white text-text-primary outline-none focus:border-primary/40" %>
+      <label class="label">Expires At</label>
+      <%= f.datetime_local_field :expires_at, class: "input h-11" %>
     </div>
   </div>
   <div class="flex gap-3">
     <%= f.submit class: "h-[42px] px-6 rounded-sm btn-primary font-bold cursor-pointer border-0" %>
-    <%= link_to "Cancel", memory_items_path, class: "h-[42px] px-4 border border-panel-border rounded-sm bg-white text-text-primary font-bold inline-flex items-center no-underline hover:bg-bg" %>
+    <%= link_to "Cancel", memory_items_path, class: "btn-secondary btn-lg" %>
   </div>
 <% end %>

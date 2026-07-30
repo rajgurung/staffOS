@@ -1,9 +1,9 @@
 <div class="flex justify-between items-start mb-6">
   <div>
-    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Claude Code Hook Config</h1>
+    <h1 class="heading-1 mb-2">Claude Code Hook Config</h1>
     <p class="text-text-muted text-sm">Add this configuration to your Claude Code settings to connect StaffOS.</p>
   </div>
-  <%= link_to "Back to Project", project_path(@project), class: "h-[42px] px-4 border border-panel-border rounded-sm bg-white text-text-primary font-bold inline-flex items-center no-underline hover:bg-bg" %>
+  <%= link_to "Back to Project", project_path(@project), class: "btn-secondary btn-lg" %>
 </div>
 
 <%= card(title: "1. Generate an API Token") do %>

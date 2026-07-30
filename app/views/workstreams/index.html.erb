@@ -1,6 +1,6 @@
 <div class="flex justify-between items-start mb-6">
   <div>
-    <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">Workstreams</h1>
+    <h1 class="heading-1 mb-1">Workstreams</h1>
     <p class="text-text-muted text-[13px]">All active and historical branches with their engineering context.</p>
   </div>
 </div>
@@ -34,7 +34,7 @@
           <% if ws.run_passport %>
             <div class="flex items-center gap-3 ml-3 shrink-0">
               <%= status_pill(ws.run_passport.risk_level, color: ws.run_passport.risk_color.to_sym) %>
-              <span class="text-[18px] font-[800] tracking-[-0.04em]"><%= ws.run_passport.readiness_score %>%</span>
+              <span class="metric text-[18px]"><%= ws.run_passport.readiness_score %>%</span>
             </div>
           <% end %>
         </div>

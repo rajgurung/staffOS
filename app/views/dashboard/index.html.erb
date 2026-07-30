@@ -1,32 +1,26 @@
-<div class="flex justify-between items-start mb-6">
-  <div>
-    <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">Dashboard</h1>
-    <p class="text-text-muted text-[13px]">AI engineering assurance overview.</p>
-  </div>
-  <div class="flex gap-2">
-    <%= link_to "New Project", new_project_path, class: "h-8 px-3 rounded-md btn-secondary text-[12px] font-semibold inline-flex items-center no-underline" %>
-  </div>
-</div>
+<%= page_header("Dashboard", subtitle: "AI engineering assurance overview.") do %>
+  <%= link_to "New Project", new_project_path, class: "btn-secondary" %>
+<% end %>
 
 <%# Stats Row %>
 <div class="grid grid-cols-6 gap-3 mb-5 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2">
   <%= card(title: "Total Runs", classes: "card-accent-blue") do %>
-    <p class="text-[28px] font-[850] tracking-[-0.05em] text-blue m-0"><%= @total_runs %></p>
+    <p class="metric text-[28px] text-blue m-0"><%= @total_runs %></p>
     <p class="text-text-muted text-[12px] mt-1 m-0">sessions captured</p>
   <% end %>
 
   <%= card(title: "Passports", classes: "card-accent-primary") do %>
-    <p class="text-[28px] font-[850] tracking-[-0.05em] text-primary m-0"><%= @total_passports %></p>
+    <p class="metric text-[28px] text-primary m-0"><%= @total_passports %></p>
     <p class="text-text-muted text-[12px] mt-1 m-0">generated</p>
   <% end %>
 
   <%= card(title: "Avg Readiness", classes: "card-accent-success") do %>
-    <p class="text-[28px] font-[850] tracking-[-0.05em] text-success m-0"><%= @avg_readiness %>%</p>
+    <p class="metric text-[28px] text-success m-0"><%= @avg_readiness %>%</p>
     <p class="text-text-muted text-[12px] mt-1 m-0">across passports</p>
   <% end %>
 
   <%= card(title: "Review Required", classes: "card-accent-warning") do %>
-    <p class="text-[28px] font-[850] tracking-[-0.05em] text-warning m-0"><%= @review_required %></p>
+    <p class="metric text-[28px] text-warning m-0"><%= @review_required %></p>
     <p class="text-text-muted text-[12px] mt-1 m-0">pending human review</p>
   <% end %>
 
@@ -47,7 +41,7 @@
   <% end %>
 
   <%= card(title: "AI Usage", classes: "card-accent-cyan") do %>
-    <p class="text-[28px] font-[850] tracking-[-0.05em] text-cyan m-0"><%= number_with_delimiter(@total_tokens) %></p>
+    <p class="metric text-[28px] text-cyan m-0"><%= number_with_delimiter(@total_tokens) %></p>
     <p class="text-text-muted text-[12px] mt-1 m-0">tokens &middot; ~$<%= @estimated_cost %></p>
   <% end %>
 </div>
@@ -126,7 +120,7 @@
               <span class="text-warning text-[10px] font-semibold">REVIEW</span>
             <% end %>
             <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
-            <span class="text-[16px] font-[800] tracking-[-0.04em] w-10 text-right"><%= passport.readiness_score %>%</span>
+            <span class="metric text-[16px] w-10 text-right"><%= passport.readiness_score %>%</span>
           </div>
         <% end %>
       <% end %>

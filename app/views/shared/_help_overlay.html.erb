@@ -3,10 +3,10 @@
   <div class="absolute inset-0 bg-black/20 backdrop-blur-sm" data-action="click->help#close"></div>
 
   <%# Panel %>
-  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] overflow-y-auto bg-white rounded-xl shadow-elevated border border-panel-border">
-    <div class="sticky top-0 bg-white border-b border-panel-border px-6 py-4 flex items-center justify-between">
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] overflow-y-auto bg-panel-solid rounded-xl shadow-elevated border border-panel-border">
+    <div class="sticky top-0 bg-panel-solid border-b border-panel-border px-6 py-4 flex items-center justify-between">
       <div>
-        <h2 class="text-[18px] font-[800] tracking-[-0.04em] m-0">Quick Reference</h2>
+        <h2 class="metric text-[18px] m-0">Quick Reference</h2>
         <p class="text-text-muted text-[12px] m-0 mt-0.5">Press <kbd class="px-1.5 py-0.5 rounded bg-bg border border-panel-border text-[10px] font-mono">Cmd /</kbd> to toggle</p>
       </div>
       <button data-action="help#close" class="w-8 h-8 rounded-md bg-bg border border-panel-border grid place-items-center text-text-muted hover:text-text-primary cursor-pointer">&times;</button>
@@ -106,11 +106,11 @@
         <div class="grid grid-cols-2 gap-2 text-[12px]">
           <div class="flex items-center justify-between p-2 rounded-md bg-bg">
             <span class="text-text-soft">Quick reference</span>
-            <kbd class="px-1.5 py-0.5 rounded bg-white border border-panel-border text-[10px] font-mono">Cmd /</kbd>
+            <kbd class="px-1.5 py-0.5 rounded bg-panel-solid border border-panel-border text-[10px] font-mono">Cmd /</kbd>
           </div>
           <div class="flex items-center justify-between p-2 rounded-md bg-bg">
             <span class="text-text-soft">Close overlay</span>
-            <kbd class="px-1.5 py-0.5 rounded bg-white border border-panel-border text-[10px] font-mono">Esc</kbd>
+            <kbd class="px-1.5 py-0.5 rounded bg-panel-solid border border-panel-border text-[10px] font-mono">Esc</kbd>
           </div>
           <div class="flex items-center justify-between p-2 rounded-md bg-bg">
             <span class="text-text-soft">Search</span>

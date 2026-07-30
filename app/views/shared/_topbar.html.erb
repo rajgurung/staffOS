@@ -1,4 +1,4 @@
-<header class="h-14 flex items-center justify-between gap-2 sm:gap-4 px-6 border-b border-panel-border bg-white max-lg:px-4">
+<header class="h-14 flex items-center justify-between gap-2 sm:gap-4 px-6 border-b border-panel-border bg-panel-solid max-lg:px-4">
   <%# Hamburger (mobile only) %>
   <button data-action="sidebar#open" class="lg:hidden shrink-0 w-8 h-8 -ml-1 rounded-md grid place-items-center text-text-soft hover:bg-bg" aria-label="Open menu">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -12,7 +12,7 @@
       <svg class="w-3.5 h-3.5 text-text-muted ml-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
     </button>
 
-    <div data-dropdown-target="menu" class="hidden absolute top-10 left-0 w-64 border border-panel-border rounded-lg bg-white shadow-elevated z-50">
+    <div data-dropdown-target="menu" class="hidden absolute top-10 left-0 w-64 border border-panel-border rounded-lg bg-panel-solid shadow-elevated z-50">
       <div class="p-2">
         <% current_user.projects.order(:name).each do |project| %>
           <%= button_to switch_project_path(project_id: project.id), class: "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left text-[13px] transition-colors cursor-pointer border-0 #{project.id == current_project&.id ? 'bg-primary-soft text-primary-dark font-semibold' : 'bg-transparent text-text-soft hover:bg-bg hover:text-text-primary'}" do %>
@@ -36,7 +36,7 @@
   <div class="flex-1 max-w-md hidden md:block">
     <%= form_tag search_path, method: :get, class: "w-full" do %>
       <input name="q" value="<%= params[:q] %>"
-        class="w-full h-8 px-3 border border-panel-border rounded-md bg-bg text-[13px] text-text-soft placeholder:text-text-muted outline-none focus:border-primary/40 focus:shadow-[0_0_0_3px_rgba(91,95,247,0.08)] transition-all"
+        class="w-full h-8 px-3 border border-panel-border rounded-md bg-bg text-[13px] text-text-soft placeholder:text-text-muted outline-none transition-all"
         placeholder="Search passports, docs, decisions..." />
     <% end %>
   </div>
@@ -47,8 +47,9 @@
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
       <kbd class="text-[9px] font-mono text-text-muted hidden sm:inline">?</kbd>
     </button>
-    <button class="w-8 h-8 rounded-md border border-panel-border bg-bg grid place-items-center text-text-muted hover:text-text-primary hover:border-panel-border-strong transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+    <button data-controller="theme" data-action="theme#toggle" class="w-8 h-8 rounded-md border border-panel-border bg-bg grid place-items-center text-text-muted hover:text-text-primary hover:border-panel-border-strong transition-colors cursor-pointer" title="Toggle theme" aria-label="Toggle theme">
+      <svg data-theme-target="moon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
+      <svg data-theme-target="sun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
     </button>
     <%= link_to destroy_user_session_path, data: { turbo_method: :delete }, class: "text-text-muted text-[12px] font-medium hover:text-text-soft no-underline transition-colors" do %>
       Sign out

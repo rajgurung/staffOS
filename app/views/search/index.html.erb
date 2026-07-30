@@ -1,8 +1,8 @@
 <div class="mb-6">
-  <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-3">Search</h1>
+  <h1 class="heading-1 mb-3">Search</h1>
   <%= form_tag search_path, method: :get, class: "flex gap-2" do %>
     <input name="q" value="<%= @query %>" autofocus
-      class="flex-1 h-9 px-3 border border-panel-border rounded-md bg-white text-[13px] text-text-primary placeholder:text-text-muted outline-none focus:border-primary/40 focus:shadow-[0_0_0_3px_rgba(91,95,247,0.08)]"
+      class="input h-9 flex-1"
       placeholder="Search passports, docs, decisions, memory..." />
     <button type="submit" class="h-9 px-4 rounded-md btn-primary text-[12px] font-semibold border-0 cursor-pointer">Search</button>
   <% end %>
@@ -23,7 +23,7 @@
                 <p class="text-[13px] font-semibold text-text-primary m-0 truncate"><%= passport.intent %></p>
                 <p class="text-[11px] text-text-muted mt-0.5 m-0"><span class="text-primary"><%= passport.workstream.branch_name %></span> &middot; <%= passport.risk_level %></p>
               </div>
-              <span class="text-[14px] font-[800] ml-3"><%= passport.readiness_score %>%</span>
+              <span class="metric text-[14px] ml-3"><%= passport.readiness_score %>%</span>
             </div>
           <% end %>
         <% end %>

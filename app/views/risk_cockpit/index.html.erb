@@ -1,26 +1,26 @@
 <div class="flex justify-between items-start mb-6">
   <div>
-    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Risk Cockpit</h1>
+    <h1 class="heading-1 mb-2">Risk Cockpit</h1>
     <p class="text-text-muted text-sm">Engineering risk overview across all AI coding sessions.</p>
   </div>
 </div>
 
 <div class="grid grid-cols-5 gap-4 mb-6 max-xl:grid-cols-2 max-lg:grid-cols-1">
-  <%= card(title: "Total Runs") do %><p class="text-[32px] font-[850] tracking-[-0.05em]"><%= @total_runs %></p><% end %>
+  <%= card(title: "Total Runs") do %><p class="metric text-[32px]"><%= @total_runs %></p><% end %>
   <%= card(title: "High Risk") do %>
-    <p class="text-[32px] font-[850] tracking-[-0.05em] text-danger"><%= @high_risk %></p>
+    <p class="metric text-[32px] text-danger"><%= @high_risk %></p>
     <p class="text-text-muted text-[13px]"><%= @total_runs > 0 ? ((@high_risk.to_f / @total_runs) * 100).round : 0 %>% of runs</p>
   <% end %>
   <%= card(title: "Medium Risk") do %>
-    <p class="text-[32px] font-[850] tracking-[-0.05em] text-warning"><%= @medium_risk %></p>
+    <p class="metric text-[32px] text-warning"><%= @medium_risk %></p>
     <p class="text-text-muted text-[13px]"><%= @total_runs > 0 ? ((@medium_risk.to_f / @total_runs) * 100).round : 0 %>% of runs</p>
   <% end %>
   <%= card(title: "Low Risk") do %>
-    <p class="text-[32px] font-[850] tracking-[-0.05em] text-success"><%= @low_risk %></p>
+    <p class="metric text-[32px] text-success"><%= @low_risk %></p>
     <p class="text-text-muted text-[13px]"><%= @total_runs > 0 ? ((@low_risk.to_f / @total_runs) * 100).round : 0 %>% of runs</p>
   <% end %>
   <%= card(title: "Avg Readiness") do %>
-    <p class="text-[32px] font-[850] tracking-[-0.05em] text-primary"><%= @avg_readiness %>%</p>
+    <p class="metric text-[32px] text-primary"><%= @avg_readiness %>%</p>
     <p class="text-text-muted text-[13px]"><%= @review_required %> need human review</p>
   <% end %>
 </div>
@@ -70,7 +70,7 @@
           </div>
           <div class="flex items-center gap-3">
             <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
-            <span class="font-[850] text-lg"><%= passport.readiness_score %>%</span>
+            <span class="metric text-[18px]"><%= passport.readiness_score %>%</span>
           </div>
         </div>
       <% end %>

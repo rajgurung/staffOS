@@ -1,7 +1,7 @@
 <div class="max-w-2xl mx-auto">
   <div class="text-center mb-8">
     <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-primary to-purple grid place-items-center text-white text-xl font-bold shadow-primary">S</div>
-    <h1 class="text-[28px] font-[800] tracking-[-0.04em] mb-2">Connect a Project</h1>
+    <h1 class="heading-1 mb-2">Connect a Project</h1>
     <p class="text-text-soft text-[14px]">Two steps to capture every Claude Code session.</p>
   </div>
 
@@ -31,8 +31,8 @@
           <h2 class="text-[15px] font-[700] m-0">Run this in your project directory</h2>
         </div>
         <div class="relative" data-controller="clipboard" data-clipboard-text-value="ruby <(curl -s <%= request.base_url %>/connect/script)">
-          <div class="p-4 rounded-lg bg-[#1e1e2e] font-mono text-[13px] text-[#cdd6f4] overflow-x-auto">
-            <span class="text-[#a6adc8]">$</span> ruby &lt;(curl -s <%= request.base_url %>/connect/script)
+          <div class="terminal p-4 rounded-lg text-[13px] overflow-x-auto">
+            <span class="terminal-dim">$</span> ruby &lt;(curl -s <%= request.base_url %>/connect/script)
           </div>
           <button data-action="clipboard#copy" class="absolute top-3 right-3 h-7 px-2.5 rounded-md bg-white/10 text-white/70 text-[11px] font-semibold border-0 cursor-pointer hover:bg-white/20 transition-colors">Copy</button>
         </div>

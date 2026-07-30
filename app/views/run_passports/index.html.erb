@@ -1,6 +1,6 @@
 <div class="flex justify-between items-start mb-6">
   <div>
-    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Run Passports</h1>
+    <h1 class="heading-1 mb-2">Run Passports</h1>
     <p class="text-text-muted text-sm">One living Run Passport per workstream, built from captured AI coding sessions.</p>
   </div>
 </div>
@@ -28,7 +28,7 @@
             <% end %>
             <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
             <div class="text-right">
-              <span class="text-[24px] font-[850] tracking-[-0.05em]"><%= passport.readiness_score %>%</span>
+              <span class="metric text-[24px]"><%= passport.readiness_score %>%</span>
               <span class="block text-text-muted text-[11px]">Ready</span>
             </div>
           </div>

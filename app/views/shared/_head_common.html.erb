@@ -1,0 +1,17 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<%# Resolve the theme before first paint: explicit choice (localStorage,
+    mirrored to a cookie for the server) wins, otherwise follow the OS. %>
+<script>
+  (function () {
+    var m = document.cookie.match(/(?:^|;\s*)staffos_theme=(dark|light)/);
+    var t;
+    try { t = localStorage.getItem("staffos_theme"); } catch (e) {}
+    t = t || (m && m[1]);
+    if (t !== "dark" && t !== "light") {
+      t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.dataset.theme = t;
+  })();
+</script>

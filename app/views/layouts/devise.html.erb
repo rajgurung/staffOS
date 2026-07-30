@@ -1,14 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html <%= tag.attributes(html_theme_attrs) %>>
   <head>
     <title><%= content_for(:title) || "StaffOS" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="application-name" content="StaffOS">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <%= render "shared/head_common" %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
@@ -18,7 +16,7 @@
       <div class="w-full max-w-[380px]">
         <div class="flex items-center justify-center gap-2.5 mb-8">
           <span class="w-8 h-8 rounded-lg bg-primary grid place-items-center text-white text-sm font-bold shadow-primary">S</span>
-          <span class="text-xl font-[750] tracking-[-0.04em]">StaffOS</span>
+          <span class="font-display text-xl font-[700] tracking-[-0.03em]">StaffOS</span>
         </div>
 
         <% if notice %>

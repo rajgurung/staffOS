@@ -3,7 +3,7 @@
 <div class="flex justify-between items-start mb-6">
   <div>
     <p class="text-[12px] font-semibold tracking-[0.02em] uppercase text-text-muted mb-1">Agent Session</p>
-    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2 flex items-center gap-3">
+    <h1 class="heading-1 mb-2 flex items-center gap-3">
       <%= @session.agent_name %>
       <%= status_pill(@session.status&.capitalize || "Active", color: @session.status == "completed" ? :success : :info) %>
     </h1>
@@ -39,7 +39,7 @@
             </div>
             <div class="flex items-end justify-between gap-2">
               <div>
-                <span class="text-[26px] font-[850] tracking-[-0.05em] leading-none"><%= passport.readiness_score %>%</span>
+                <span class="metric text-[26px] leading-none"><%= passport.readiness_score %>%</span>
                 <span class="block text-text-muted text-[11px] mt-1.5">ready &middot; <%= pluralize(passport.sessions_count, "session") %></span>
               </div>
               <% if passport.risk_level.present? %>
@@ -99,7 +99,7 @@
               else 'bg-primary'
             end %>"></span>
           <div class="min-w-0">
-            <p class="text-[13px] font-[800] m-0 flex items-center gap-2 flex-wrap">
+            <p class="text-[13px] font-bold m-0 flex items-center gap-2 flex-wrap">
               <%= event.event_type.titleize %>
               <%# Only flag branch hops — events on the session's primary branch stay untagged %>
               <% if event.workstream && event.workstream != @session.workstream %>

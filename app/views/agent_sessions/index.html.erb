@@ -1,6 +1,6 @@
 <div class="flex justify-between items-start mb-6">
   <div>
-    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mb-2">Runs</h1>
+    <h1 class="heading-1 mb-2">Runs</h1>
     <p class="text-text-muted text-sm">All AI coding sessions captured by StaffOS.</p>
   </div>
 </div>
@@ -10,7 +10,7 @@
     <% active = (params[:status] == status) || (status == "all" && params[:status].blank?) %>
     <%= link_to status.capitalize,
       runs_path(status: status == "all" ? nil : status),
-      class: "h-9 px-4 flex items-center rounded-sm text-sm font-bold transition-colors no-underline #{active ? 'btn-primary border-0' : 'border border-panel-border bg-white text-text-soft hover:bg-bg'}" %>
+      class: "h-9 px-4 flex items-center rounded-sm text-sm font-bold transition-colors no-underline #{active ? 'btn-primary border-0' : 'border border-panel-border bg-panel-solid text-text-soft hover:bg-bg'}" %>
   <% end %>
 </div>
 
@@ -35,7 +35,7 @@
             <div class="flex items-center gap-4">
               <span class="text-[11px] text-text-muted">based on <%= pluralize(passport.sessions_count, "captured session") %></span>
               <%= status_pill(passport.risk_level, color: passport.risk_color.to_sym) %>
-              <span class="text-lg font-[850] tracking-[-0.05em]"><%= passport.readiness_score %>%</span>
+              <span class="metric text-[18px]"><%= passport.readiness_score %>%</span>
             </div>
           <% else %>
             <span class="text-text-muted">&mdash;</span>

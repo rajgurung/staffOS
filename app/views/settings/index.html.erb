@@ -1,5 +1,5 @@
 <div class="mb-6">
-  <h1 class="text-[24px] font-[800] tracking-[-0.04em] mb-1">Settings</h1>
+  <h1 class="heading-1 mb-1">Settings</h1>
   <p class="text-text-muted text-[13px]">Account, integrations, and system overview.</p>
 </div>
 
@@ -8,11 +8,11 @@
   <%= card(title: "Profile") do %>
     <%= form_tag update_profile_settings_path, method: :patch, class: "space-y-4" do %>
       <div>
-        <label class="block text-text-soft text-[12px] font-medium mb-1">Name</label>
+        <label class="label">Name</label>
         <input name="user[name]" value="<%= @user.name %>" class="w-full h-9 px-3 border border-panel-border rounded-md bg-bg text-[13px] text-text-primary outline-none" />
       </div>
       <div>
-        <label class="block text-text-soft text-[12px] font-medium mb-1">Email</label>
+        <label class="label">Email</label>
         <input name="user[email]" value="<%= @user.email %>" class="w-full h-9 px-3 border border-panel-border rounded-md bg-bg text-[13px] text-text-primary outline-none" />
       </div>
       <button type="submit" class="h-8 px-4 rounded-md btn-primary text-[12px] font-semibold border-0 cursor-pointer">Save</button>

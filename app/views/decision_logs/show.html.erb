@@ -1,11 +1,11 @@
 <div class="flex justify-between items-start mb-6">
   <div>
     <%= status_pill(@decision_log.status&.capitalize || "Draft", color: @decision_log.status_color.to_sym) %>
-    <h1 class="text-[30px] font-[800] leading-tight tracking-[-0.05em] mt-2 mb-2"><%= @decision_log.title %></h1>
+    <h1 class="heading-1 mt-2 mb-2"><%= @decision_log.title %></h1>
     <p class="text-text-muted text-sm"><%= @decision_log.project.name %> &middot; Created <%= time_ago_in_words(@decision_log.created_at) %> ago</p>
   </div>
   <div class="flex gap-3">
-    <%= link_to "Edit", edit_decision_log_path(@decision_log), class: "h-[42px] px-4 border border-panel-border rounded-sm bg-white text-text-primary font-bold inline-flex items-center no-underline hover:bg-bg" %>
+    <%= link_to "Edit", edit_decision_log_path(@decision_log), class: "btn-secondary btn-lg" %>
     <%= link_to "Delete", decision_log_path(@decision_log), data: { turbo_method: :delete, turbo_confirm: "Delete?" }, class: "h-[42px] px-4 border border-danger/20 rounded-sm bg-danger-soft text-danger font-bold inline-flex items-center no-underline" %>
   </div>
 </div>

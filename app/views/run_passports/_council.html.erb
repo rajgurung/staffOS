@@ -2,7 +2,7 @@
 <div id="council" class="mt-6">
   <div class="flex items-center justify-between mb-4">
     <div>
-      <h2 class="text-[20px] font-[800] tracking-[-0.04em] m-0">AI Council</h2>
+      <h2 class="heading-2 m-0">AI Council</h2>
       <p class="text-text-muted text-[13px] mt-1 m-0">Multi-persona engineering review of this Run Passport.</p>
     </div>
     <div class="flex items-center gap-3">
@@ -34,7 +34,7 @@
           </div>
           <p class="text-[12px] font-semibold text-text-primary m-0"><%= config[:label] %></p>
           <% if review&.completed? %>
-            <p class="text-[18px] font-[800] tracking-[-0.04em] mt-1 m-0 <%= review.score >= 7 ? 'text-success' : review.score >= 5 ? 'text-warning' : 'text-danger' %>">
+            <p class="metric text-[18px] mt-1 m-0 <%= review.score >= 7 ? 'text-success' : review.score >= 5 ? 'text-warning' : 'text-danger' %>">
               <%= review.score %>
             </p>
           <% else %>
@@ -66,9 +66,9 @@
                 <%= if review&.completed?
                   'bg-success text-white border-2 border-success'
                 elsif review&.running?
-                  'bg-white border-[3px] border-primary shadow-[0_0_0_4px_rgba(91,95,247,0.1)]'
+                  'bg-panel-solid border-[3px] border-primary shadow-[0_0_0_4px_var(--ui-focus-ring)]'
                 else
-                  'bg-white border-2 border-panel-border-strong'
+                  'bg-panel-solid border-2 border-panel-border-strong'
                 end %>">
                 <% if review&.completed? %>&#10003;<% end %>
               </div>
@@ -87,12 +87,12 @@
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-lg bg-primary-soft text-primary grid place-items-center text-lg font-bold">&#10022;</div>
               <div>
-                <p class="text-[15px] font-[800] tracking-[-0.03em] text-text-primary m-0">Council Synthesis</p>
+                <p class="heading-2 text-[15px] text-text-primary m-0">Council Synthesis</p>
                 <p class="text-text-muted text-[12px] m-0">Aggregated recommendation from all reviewers</p>
               </div>
             </div>
             <div class="text-center">
-              <p class="text-[28px] font-[850] tracking-[-0.05em] m-0 <%= @passport.council_score >= 7 ? 'text-success' : @passport.council_score >= 5 ? 'text-warning' : 'text-danger' %>">
+              <p class="metric text-[28px] m-0 <%= @passport.council_score >= 7 ? 'text-success' : @passport.council_score >= 5 ? 'text-warning' : 'text-danger' %>">
                 <%= @passport.council_score %>
               </p>
               <p class="text-text-muted text-[10px] font-semibold m-0">AVG SCORE</p>
@@ -104,15 +104,15 @@
             <% warnings = @council_reviews.completed.sum { |r| (r.findings || []).count { |f| f["severity"] == "medium" } } %>
             <% positives = @council_reviews.completed.sum { |r| (r.findings || []).count { |f| f["severity"] == "positive" } } %>
             <div class="p-3 rounded-md bg-danger-soft text-center">
-              <p class="text-[18px] font-[800] text-danger m-0"><%= blockers %></p>
+              <p class="metric text-[18px] text-danger m-0"><%= blockers %></p>
               <p class="text-text-muted text-[10px] font-semibold m-0">Blockers</p>
             </div>
             <div class="p-3 rounded-md bg-warning-soft text-center">
-              <p class="text-[18px] font-[800] text-warning m-0"><%= warnings %></p>
+              <p class="metric text-[18px] text-warning m-0"><%= warnings %></p>
               <p class="text-text-muted text-[10px] font-semibold m-0">Warnings</p>
             </div>
             <div class="p-3 rounded-md bg-success-soft text-center">
-              <p class="text-[18px] font-[800] text-success m-0"><%= positives %></p>
+              <p class="metric text-[18px] text-success m-0"><%= positives %></p>
               <p class="text-text-muted text-[10px] font-semibold m-0">Positives</p>
             </div>
           </div>
@@ -157,7 +157,7 @@
                   </p>
                 </div>
               </div>
-              <span class="text-[20px] font-[800] tracking-[-0.04em] <%= review.score >= 7 ? 'text-success' : review.score >= 5 ? 'text-warning' : 'text-danger' %>">
+              <span class="metric text-[20px] <%= review.score >= 7 ? 'text-success' : review.score >= 5 ? 'text-warning' : 'text-danger' %>">
                 <%= review.score %>
               </span>
             </div>
