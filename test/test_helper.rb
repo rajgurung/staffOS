@@ -43,12 +43,15 @@ module ActiveSupport
 
     # Force the deterministic-heuristic path by disabling the LLM client for the
     # duration of the block, regardless of any configured key/credentials.
+    # Stubs the key source itself: instances resolve their key via
+    # LlmClient.api_key / key_for at initialize, so nilling the class-level key
+    # (with no per-user keys in tests) guarantees every instance is disabled.
     def without_llm
-      original = LlmClient.method(:enabled?)
-      LlmClient.define_singleton_method(:enabled?) { false }
+      original = LlmClient.method(:api_key)
+      LlmClient.define_singleton_method(:api_key) { nil }
       yield
     ensure
-      LlmClient.define_singleton_method(:enabled?, original)
+      LlmClient.define_singleton_method(:api_key, original)
     end
 
     # Builders for the StaffOS domain graph. Tests construct records directly

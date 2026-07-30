@@ -13,7 +13,7 @@ class CouncilRunner
 
   def initialize(passport)
     @passport = passport
-    # Councils bill the project owner's key, not a shared server key.
+    # Councils prefer the project owner's key (server key as fallback).
     @api_key = LlmClient.key_for(passport.workstream.project.user)
   end
 
