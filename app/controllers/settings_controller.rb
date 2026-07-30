@@ -22,10 +22,14 @@ class SettingsController < ApplicationController
   # Set or remove the user's own Anthropic key. The key is write-only from the
   # UI: it is never rendered back, only a masked hint.
   def update_api_key
+    key = params.dig(:user, :anthropic_api_key).to_s.strip
     if params[:remove].present?
       current_user.update!(anthropic_api_key: nil)
       redirect_to settings_path, notice: "Anthropic API key removed. AI reviewers fall back to heuristics."
-    elsif current_user.update(anthropic_api_key: params.dig(:user, :anthropic_api_key).to_s.strip)
+    elsif key.blank?
+      # An empty Save must not silently clear a stored key — that's what Remove is for.
+      redirect_to settings_path, alert: "Paste a key to save it, or use Remove to clear the current one."
+    elsif current_user.update(anthropic_api_key: key)
       redirect_to settings_path, notice: "Anthropic API key saved. AI Council and Smart Summary now use your key."
     else
       redirect_to settings_path, alert: current_user.errors.full_messages.to_sentence
