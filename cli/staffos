@@ -307,7 +307,10 @@ class StaffOSCLI
     data = JSON.parse($stdin.read) rescue {}
     # Without a session id the server would invent an "unknown-..." session
     # and file the event there, so drop unreadable input instead.
-    return unless data.is_a?(Hash) && data["session_id"]
+    unless data.is_a?(Hash) && data["session_id"]
+      warn "staffos capture: dropped #{event} event with no session_id" if ENV["STAFFOS_DEBUG"]
+      return
+    end
 
     branch = `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
     branch = "unknown" if branch.empty?
