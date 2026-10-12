@@ -390,6 +390,10 @@ class StaffOSCLI
   def ignore_in_git(entry)
     existing = File.exist?(".gitignore") ? File.read(".gitignore") : ""
     return if existing.split("\n").map(&:strip).include?(entry)
+    # Covered by an existing repo rule, e.g. a whole `.claude/` line. The global
+    # excludes file is skipped so the result doesn't depend on one machine's setup.
+    return if system("git", "-c", "core.excludesFile=", "check-ignore", "-q", entry,
+                     out: File::NULL, err: File::NULL)
 
     File.open(".gitignore", "a") do |f|
       f.puts "" unless existing.empty? || existing.end_with?("\n")
