@@ -112,7 +112,7 @@ No Homebrew? The CLI is a single, dependency-free Ruby script — grab it from t
 ```bash
 staffos init         # asks for the endpoint + project token, installs Claude Code hooks
 # ...use Claude Code normally — events are captured automatically...
-staffos passport     # see the latest passport for your branch
+staffos passport     # readiness, risk and open checks for your current branch
 staffos disconnect   # remove credentials and StaffOS's hooks (your own hooks stay)
 ```
 
