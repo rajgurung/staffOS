@@ -350,12 +350,17 @@ class StaffOSCLI
     puts "Added #{entry} to .gitignore"
   end
 
+  # Stops rather than treating a broken file as empty, which would make the
+  # next write silently replace the user's settings.
   def read_settings(file)
     return {} unless File.exist?(file)
     settings = JSON.parse(File.read(file))
-    settings.is_a?(Hash) ? settings : {}
-  rescue JSON::ParserError
-    {}
+    raise JSON::ParserError, "top level is not an object" unless settings.is_a?(Hash)
+    settings
+  rescue JSON::ParserError => e
+    puts "Error: #{file} isn't valid JSON (#{e.message.lines.first.strip})."
+    puts "Fix or remove it, then run this command again. Nothing was changed."
+    exit 1
   end
 
   # Matches the current command hooks and the HTTP hooks older setups
