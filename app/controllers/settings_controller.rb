@@ -8,7 +8,15 @@ class SettingsController < ApplicationController
     agent_tokens = sessions.sum { |s| s.metadata&.dig("tokens_used").to_i }
     @total_tokens = llm_tokens + agent_tokens
     @total_sessions = sessions.count
-    @total_events = RunEvent.joins(:agent_session).where(agent_sessions: { project_id: @projects.select(:id) }).count
+    events = RunEvent.joins(:agent_session).where(agent_sessions: { project_id: @projects.select(:id) })
+    @total_events = events.count
+    @last_event_at = events.maximum(:occurred_at)
+    @counts = {
+      workstreams: Workstream.where(project_id: @projects.select(:id)).count,
+      passports: passports.count,
+      documents: Document.where(project_id: @projects.select(:id)).count,
+      decisions: DecisionLog.where(project_id: @projects.select(:id)).count
+    }
   end
 
   def update_profile

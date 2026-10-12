@@ -1,46 +1,22 @@
 module ProjectsHelper
-  def hook_config_json(project)
-    token = project.api_tokens.first&.token
-    headers = { "X-StaffOS-Project" => project.name }
-    headers["Authorization"] = "Bearer #{token}" if token
+  # Mirrors what `staffos init` / `staffos hook` install. Command hooks, not
+  # HTTP: `staffos capture` adds the local git branch, which the server can't
+  # work out, and without it events can't be filed under a branch passport.
+  # The token isn't here; capture reads it from the repo's .staffos.yml.
+  HOOK_EVENTS = {
+    "SessionStart" => "session_start",
+    "UserPromptSubmit" => "prompt",
+    "PreToolUse" => "pre_tool",
+    "PostToolUse" => "post_tool",
+    "Stop" => "stop"
+  }.freeze
 
-    config = {
-      hooks: {
-        SessionStart: [{
-          hooks: [{
-            type: "http",
-            url: "http://localhost:9090/api/v1/hooks/session_start",
-            headers: headers,
-            timeout: 10
-          }]
-        }],
-        UserPromptSubmit: [{
-          hooks: [{
-            type: "http",
-            url: "http://localhost:9090/api/v1/hooks/prompt",
-            headers: headers,
-            timeout: 10
-          }]
-        }],
-        PostToolUse: [{
-          matcher: "Bash|Edit|Write|Read",
-          hooks: [{
-            type: "http",
-            url: "http://localhost:9090/api/v1/hooks/post_tool",
-            headers: headers,
-            timeout: 10
-          }]
-        }],
-        Stop: [{
-          hooks: [{
-            type: "http",
-            url: "http://localhost:9090/api/v1/hooks/stop",
-            headers: headers,
-            timeout: 30
-          }]
-        }]
-      }
-    }
-    JSON.pretty_generate(config)
+  def hook_config_json
+    hooks = HOOK_EVENTS.to_h do |claude_event, api_event|
+      entry = { "hooks" => [{ "type" => "command", "command" => "staffos capture #{api_event}" }] }
+      entry["matcher"] = "Bash|Edit|Write|Read" if %w[PreToolUse PostToolUse].include?(claude_event)
+      [claude_event, [entry]]
+    end
+    JSON.pretty_generate({ "hooks" => hooks })
   end
 end

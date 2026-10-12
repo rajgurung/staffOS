@@ -52,12 +52,17 @@
           <span class="w-8 h-8 rounded-md bg-purple-soft text-purple grid place-items-center text-[11px] font-bold">CC</span>
           <div>
             <p class="text-[13px] font-semibold text-text-primary m-0">Claude Code</p>
-            <p class="text-[11px] text-text-muted m-0">HTTP hooks via API</p>
+            <p class="text-[11px] text-text-muted m-0">Command hooks via the staffos CLI</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-success"></span>
-          <span class="text-success text-[11px] font-semibold">Connected</span>
+          <% if @last_event_at %>
+            <span class="w-2 h-2 rounded-full bg-success"></span>
+            <span class="text-success text-[11px] font-semibold">Last event <%= time_ago_in_words(@last_event_at) %> ago</span>
+          <% else %>
+            <span class="w-2 h-2 rounded-full bg-text-muted"></span>
+            <span class="text-text-muted text-[11px] font-semibold">No events yet</span>
+          <% end %>
         </div>
       </div>
 
@@ -94,10 +99,10 @@
       <div class="flex justify-between"><span class="text-text-muted">Total Sessions</span><span class="font-semibold"><%= @total_sessions %></span></div>
       <div class="flex justify-between"><span class="text-text-muted">Total Events</span><span class="font-semibold"><%= number_with_delimiter(@total_events) %></span></div>
       <div class="flex justify-between"><span class="text-text-muted">Total Tokens</span><span class="font-semibold"><%= number_with_delimiter(@total_tokens) %></span></div>
-      <div class="flex justify-between"><span class="text-text-muted">Workstreams</span><span class="font-semibold"><%= Workstream.count %></span></div>
-      <div class="flex justify-between"><span class="text-text-muted">Passports</span><span class="font-semibold"><%= RunPassport.count %></span></div>
-      <div class="flex justify-between"><span class="text-text-muted">Documents</span><span class="font-semibold"><%= Document.count %></span></div>
-      <div class="flex justify-between"><span class="text-text-muted">Decisions</span><span class="font-semibold"><%= DecisionLog.count %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Workstreams</span><span class="font-semibold"><%= @counts[:workstreams] %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Passports</span><span class="font-semibold"><%= @counts[:passports] %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Documents</span><span class="font-semibold"><%= @counts[:documents] %></span></div>
+      <div class="flex justify-between"><span class="text-text-muted">Decisions</span><span class="font-semibold"><%= @counts[:decisions] %></span></div>
     </div>
   <% end %>
 
@@ -105,10 +110,9 @@
   <%= card(title: "CLI Setup") do %>
     <p class="text-text-soft text-[13px] mb-3 m-0">Install the StaffOS CLI to connect your projects:</p>
     <div class="p-3 rounded-md bg-bg border border-panel-border font-mono text-[11px] text-text-soft space-y-1">
-      <p class="m-0 text-text-muted"># Add to your PATH</p>
-      <p class="m-0">export PATH="$PATH:/path/to/staffos/cli"</p>
-      <p class="m-0 text-text-muted mt-2"># Login and initialize</p>
-      <p class="m-0">staffos login</p>
+      <p class="m-0 text-text-muted"># Install</p>
+      <p class="m-0">brew install rajgurung/tap/staffos</p>
+      <p class="m-0 text-text-muted mt-2"># In each repo: paste the endpoint and the project's token</p>
       <p class="m-0">staffos init</p>
       <p class="m-0 text-text-muted mt-2"># Check status</p>
       <p class="m-0">staffos status</p>
@@ -121,8 +125,9 @@
       <% [
         ["POST", "/api/v1/hooks/session_start", "Session started"],
         ["POST", "/api/v1/hooks/prompt", "Prompt submitted"],
+        ["POST", "/api/v1/hooks/pre_tool", "Tool starting"],
         ["POST", "/api/v1/hooks/post_tool", "Tool completed"],
-        ["POST", "/api/v1/hooks/stop", "Session stopped"],
+        ["POST", "/api/v1/hooks/stop", "Reply finished, passports rebuilt"],
         ["POST", "/api/v1/events", "Generic event"],
       ].each do |method, path, desc| %>
         <div class="flex items-center gap-2 py-1.5 border-b border-panel-border last:border-0">
