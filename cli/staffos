@@ -220,13 +220,13 @@ class StaffOSCLI
     puts "Sessions:  #{p['sessions_count']}   Files: #{p['files_count']}"
     puts "Updated:   #{p['updated_at']}"
 
-    if p["missing_checks"].any?
+    if Array(p["missing_checks"]).any?
       puts "\nNeeds attention:"
-      p["missing_checks"].each { |c| puts "  [#{c['severity']}] #{c['check']}" }
+      Array(p["missing_checks"]).each { |c| puts "  [#{c['severity']}] #{c['check']}" }
     end
-    if p["recommended_actions"].any?
+    if Array(p["recommended_actions"]).any?
       puts "\nNext steps:"
-      p["recommended_actions"].each { |a| puts "  [#{a['priority']}] #{a['action']}" }
+      Array(p["recommended_actions"]).each { |a| puts "  [#{a['priority']}] #{a['action']}" }
     end
     puts "\nOpen: #{p['url']}"
   end
