@@ -17,14 +17,14 @@ project = Project.find_or_create_by!(name: "AI Peer Review Pipeline") do |p|
   p.user = owner
   p.repo_name = "staffos/ai-peer-review"
   p.tech_stack = "Ruby on Rails, PostgreSQL, Sidekiq, RSpec"
-  p.risk_rules = { "auth_files" => "high", "payment_files" => "high", "infra_files" => "high", "no_tests" => "warning", "retry_logic" => "medium" }
+  p.risk_rules = { "app/services/payments" => "high", "config/initializers" => "medium", "docs/" => "low" }
 end
 
 Project.find_or_create_by!(name: "StaffOS Platform") do |p|
   p.user = owner
   p.repo_name = "rajgurung/staffOS"
   p.tech_stack = "Ruby on Rails, PostgreSQL, Tailwind CSS, Hotwire"
-  p.risk_rules = { "auth_files" => "high", "migration" => "high", "config" => "medium" }
+  p.risk_rules = { "db/migrate" => "high", "lib/council" => "medium" }
 end
 
 # Re-running with a different SEED_OWNER_EMAIL adopts the existing demo projects.

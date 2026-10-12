@@ -20,6 +20,8 @@
   <%# Risk Rules Editor %>
   <div data-controller="risk-rules">
     <label class="label">Risk Rules</label>
+    <p class="text-text-muted text-[12px] mt-0 mb-2">Paths matching a pattern raise the passport's risk. A pattern matches where a word in the path starts, so <code>Config/</code> matches <code>Config/DefaultEngine.ini</code>. Mark a pattern Low to stop the built-in rules flagging those paths.</p>
+    <input type="hidden" name="project[risk_rules_submitted]" value="1" />
     <div class="border border-panel-border rounded-md bg-panel-solid p-3">
       <div data-risk-rules-target="list">
         <% (project.risk_rules || {}).each do |pattern, level| %>

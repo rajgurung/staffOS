@@ -9,6 +9,8 @@ class Project < ApplicationRecord
   has_many :memory_items, dependent: :destroy
   has_many :api_tokens, dependent: :destroy
 
+  RISK_LEVELS = %w[high medium low].freeze
+
   def tech_stack_list
     tech_stack.to_s.split(",").map(&:strip)
   end
