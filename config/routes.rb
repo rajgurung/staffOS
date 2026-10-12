@@ -44,6 +44,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :events, only: [:create]
       post "sessions/:session_id/complete", to: "sessions#complete"
+      get "passport", to: "passports#show"
 
       # Claude Code HTTP hook endpoints
       post "hooks/session_start", to: "hooks#session_start"

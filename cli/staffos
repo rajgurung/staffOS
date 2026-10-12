@@ -173,20 +173,62 @@ class StaffOSCLI
   end
 
   def passport
-    creds = load_credentials
-    config = load_config
-    unless creds && config
-      puts "Not initialized. Run 'staffos login' and 'staffos init'."
+    creds = capture_credentials
+    unless creds
+      puts "Not initialized. Run 'staffos init' in this repo."
       exit 1
     end
 
     branch = current_branch
-    puts "Fetching passport for branch: #{branch}"
+    uri = URI("#{creds['endpoint']}/api/v1/passport")
+    uri.query = URI.encode_www_form(branch: branch)
+    begin
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == "https"
+      http.open_timeout = 5
+      http.read_timeout = 10
+      req = Net::HTTP::Get.new(uri)
+      req["Authorization"] = "Bearer #{creds['token']}"
+      res = http.request(req)
+    rescue => e
+      puts "Could not reach StaffOS: #{e.message}"
+      exit 1
+    end
+
+    case res.code
+    when "200"
+      print_passport(JSON.parse(res.body))
+    when "404"
+      puts "No passport for #{branch} yet."
+      puts "One is built when Claude Code finishes a reply on this branch with the hooks installed."
+    when "401"
+      puts "StaffOS rejected the API token. Check api_token in #{CONFIG_FILE}."
+      exit 1
+    else
+      puts "StaffOS returned HTTP #{res.code}."
+      exit 1
+    end
+  end
+
+  def print_passport(p)
+    review = p["human_review_required"] ? " (human review required)" : ""
+    puts "Passport: #{p['branch']} (#{p['project']})"
     puts "─" * 40
-    puts "Project:  #{config['project_name']}"
-    puts "Branch:   #{branch}"
-    puts "Endpoint: #{creds['endpoint']}"
-    puts "\nView in browser: #{creds['endpoint']}/workstreams"
+    puts "Readiness: #{p['readiness_score']}%"
+    puts "Risk:      #{p['risk_level']}#{review}"
+    puts "Tests:     #{p['test_status']}"
+    puts "Sessions:  #{p['sessions_count']}   Files: #{p['files_count']}"
+    puts "Updated:   #{p['updated_at']}"
+
+    if Array(p["missing_checks"]).any?
+      puts "\nNeeds attention:"
+      Array(p["missing_checks"]).each { |c| puts "  [#{c['severity']}] #{c['check']}" }
+    end
+    if Array(p["recommended_actions"]).any?
+      puts "\nNext steps:"
+      Array(p["recommended_actions"]).each { |a| puts "  [#{a['priority']}] #{a['action']}" }
+    end
+    puts "\nOpen: #{p['url']}"
   end
 
   def disconnect
@@ -263,6 +305,13 @@ class StaffOSCLI
     return unless creds && creds["token"] && event
 
     data = JSON.parse($stdin.read) rescue {}
+    # Without a session id the server would invent an "unknown-..." session
+    # and file the event there, so drop unreadable input instead.
+    unless data.is_a?(Hash) && data["session_id"]
+      warn "staffos capture: dropped #{event} event with no session_id" if ENV["STAFFOS_DEBUG"]
+      return
+    end
+
     branch = `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
     branch = "unknown" if branch.empty?
 
