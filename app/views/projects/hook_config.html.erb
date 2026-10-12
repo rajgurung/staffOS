@@ -29,8 +29,7 @@
       ["UserPromptSubmit", "Records the developer's intent and prompt"],
       ["Tool Use (before)", "Logs which tools the agent plans to use"],
       ["Tool Use (after)", "Records results of file reads, edits, commands"],
-      ["Stop", "Captures session pause or interruption"],
-      ["SessionEnd", "Triggers passport generation and final summary"]
+      ["Stop", "Rebuilds the passport of every branch the session touched"]
     ].each do |event, description| %>
       <div class="p-3 rounded-sm bg-bg/50 border border-panel-border">
         <p class="text-primary font-bold text-sm"><%= event %></p>
