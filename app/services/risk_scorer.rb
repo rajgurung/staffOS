@@ -3,8 +3,8 @@ class RiskScorer
     auth permission session token
     payment billing stripe charge invoice
     deploy infra terraform docker kubernetes
-    .github/workflows ci cd pipeline
-    migration schema
+    .github/workflows .gitlab-ci .circleci jenkinsfile pipeline
+    migration migrate schema
     credentials secrets .env
   ].freeze
 
@@ -33,6 +33,16 @@ class RiskScorer
     }
   end
 
+  # A pattern matches where a word in the path starts: after a separator
+  # (/ _ - .) or at a camelCase hump. Plain substring matching flagged
+  # paths like "docs/decisions" as high risk because they contain "ci".
+  def self.matches?(path, pattern)
+    needle = pattern.to_s.strip.downcase
+    return false if needle.empty?
+    return true if path.downcase.match?(/(?:\A|[^a-z0-9])#{Regexp.escape(needle)}/)
+    path.match?(/(?<=[a-z0-9])#{Regexp.escape(needle.capitalize)}/)
+  end
+
   private
 
   def gather_signals
@@ -40,18 +50,28 @@ class RiskScorer
     files = @passport.files_touched || []
 
     files.each do |file|
-      path = file["path"].to_s.downcase
+      path = file["path"].to_s
+      project_rules = project_risk_rules.select { |pattern, _| self.class.matches?(path, pattern) }
 
-      HIGH_RISK_PATTERNS.each do |pattern|
-        if path.include?(pattern)
-          signals << { file: file["path"], risk: "high", reason: "Matches high-risk pattern: #{pattern}" }
+      # A project rule marked low says "this path is fine here" and silences
+      # the built-in patterns for it, e.g. a game repo's Source/Session/ dir.
+      unless project_rules.value?("low")
+        HIGH_RISK_PATTERNS.each do |pattern|
+          if self.class.matches?(path, pattern)
+            signals << { file: path, risk: "high", reason: "Matches high-risk pattern: #{pattern}" }
+          end
+        end
+
+        MEDIUM_RISK_PATTERNS.each do |pattern|
+          if self.class.matches?(path, pattern)
+            signals << { file: path, risk: "medium", reason: "Matches medium-risk pattern: #{pattern}" }
+          end
         end
       end
 
-      MEDIUM_RISK_PATTERNS.each do |pattern|
-        if path.include?(pattern)
-          signals << { file: file["path"], risk: "medium", reason: "Matches medium-risk pattern: #{pattern}" }
-        end
+      project_rules.each do |pattern, level|
+        next if level == "low"
+        signals << { file: path, risk: level, reason: "Matches project risk rule: #{pattern}" }
       end
     end
 
@@ -73,6 +93,11 @@ class RiskScorer
     end
 
     signals.uniq { |s| [s[:file], s[:check], s[:reason]] }
+  end
+
+  def project_risk_rules
+    rules = @passport.workstream&.project&.risk_rules
+    rules.is_a?(Hash) ? rules.select { |_, level| Project::RISK_LEVELS.include?(level) } : {}
   end
 
   def compute_level(signals)

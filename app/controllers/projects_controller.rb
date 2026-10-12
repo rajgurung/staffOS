@@ -36,7 +36,13 @@ class ProjectsController < ApplicationController
   end
 
   def update
+    rules_before = @project.risk_rules
     if @project.update(project_params)
+      # Rescore now rather than waiting for each branch's next session.
+      # Generation is deterministic (no LLM calls), so this is cheap.
+      if @project.risk_rules != rules_before
+        @project.workstreams.joins(:run_passport).find_each { |ws| PassportGenerator.new(ws).generate! }
+      end
       redirect_to @project, notice: "Project updated."
     else
       render :edit, status: :unprocessable_entity
@@ -59,9 +65,15 @@ class ProjectsController < ApplicationController
   end
 
   def project_params
-    permitted = params.require(:project).permit(:name, :repo_name, :tech_stack)
-    if params[:project][:risk_rules].present?
-      permitted[:risk_rules] = params[:project][:risk_rules].to_unsafe_h
+    permitted = params.require(:project).except(:risk_rules, :risk_rules_submitted).permit(:name, :repo_name, :tech_stack)
+    # The form always sends risk_rules_submitted, so removing every rule (which
+    # sends no risk_rules at all) still saves an empty set.
+    if params[:project][:risk_rules_submitted].present?
+      rules = params[:project][:risk_rules]
+      rules = rules.respond_to?(:to_unsafe_h) ? rules.to_unsafe_h : {}
+      permitted[:risk_rules] = rules.to_h
+        .transform_keys { |pattern| pattern.to_s.strip }
+        .select { |pattern, level| pattern.present? && Project::RISK_LEVELS.include?(level) }
     end
     permitted
   end
