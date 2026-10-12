@@ -117,9 +117,12 @@ staffos passport     # see the latest passport for your branch
 staffos disconnect   # remove credentials and hooks
 ```
 
-`init` installs HTTP hooks (`SessionStart`, `UserPromptSubmit`, pre/post tool
-use, `Stop`) into `.claude/settings.json`. Claude Code POSTs each event to
-StaffOS, which routes it to the right Workstream by branch.
+`init` installs command hooks (`SessionStart`, `UserPromptSubmit`, pre/post tool
+use, `Stop`) into `.claude/settings.json`. Each hook runs `staffos capture`,
+which adds the current git branch and sends the event to StaffOS. Events are
+filed under that branch's Workstream. Each `Stop` (the end of a Claude reply)
+rebuilds the branch's Run Passport. There is one passport per branch, not per
+session.
 
 ## Configuration
 

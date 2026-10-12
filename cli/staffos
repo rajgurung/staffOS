@@ -303,14 +303,15 @@ class StaffOSCLI
       Getting started:
         1. staffos login      (enter your API endpoint and token)
         2. staffos init       (creates .staffos.yml and installs hooks)
-        3. Use Claude Code normally - events are captured via HTTP hooks
+        3. Use Claude Code normally - events are captured via hooks
         4. Visit StaffOS dashboard to see workstreams and passports
 
       How it works:
-        StaffOS uses Claude Code's HTTP hooks to capture lifecycle events.
-        When Claude Code starts a session, submits a prompt, uses a tool,
-        or stops - it POSTs the full event context to StaffOS automatically.
-        No curl commands or environment variable interpolation needed.
+        init installs Claude Code command hooks that run `staffos capture`.
+        Each event (session start, prompt, tool use, stop) is tagged with
+        the current git branch and sent to StaffOS.
+        Passports belong to git branches, not sessions. Each branch has
+        one living passport, rebuilt every time Claude finishes a reply.
 
     HELP
   end
