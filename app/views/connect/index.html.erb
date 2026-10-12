@@ -2,7 +2,7 @@
   <div class="text-center mb-8">
     <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-primary to-purple grid place-items-center text-white text-xl font-bold shadow-primary">S</div>
     <h1 class="heading-1 mb-2">Connect a Project</h1>
-    <p class="text-text-soft text-[14px]">Two steps to capture every Claude Code session.</p>
+    <p class="text-text-soft text-[14px]">Two steps to capture your Claude Code work, branch by branch.</p>
   </div>
 
   <% if @project && @token %>
@@ -23,20 +23,31 @@
       </div>
     </div>
 
-    <%# Step 2: Run the setup command %>
+    <%# Step 2: Install the CLI and connect the repo %>
     <div class="card card-accent-primary mb-4">
       <div class="p-6">
         <div class="flex items-center gap-2 mb-3">
           <span class="w-6 h-6 rounded-full bg-primary text-white grid place-items-center text-[11px] font-bold">2</span>
-          <h2 class="text-[15px] font-[700] m-0">Run this in your project directory</h2>
+          <h2 class="text-[15px] font-[700] m-0">Install the CLI and connect your repo</h2>
         </div>
-        <div class="relative" data-controller="clipboard" data-clipboard-text-value="ruby <(curl -s <%= request.base_url %>/connect/script)">
+        <div class="relative" data-controller="clipboard" data-clipboard-text-value="brew install rajgurung/tap/staffos">
           <div class="terminal p-4 rounded-lg text-[13px] overflow-x-auto">
-            <span class="terminal-dim">$</span> ruby &lt;(curl -s <%= request.base_url %>/connect/script)
+            <span class="terminal-dim">$</span> brew install rajgurung/tap/staffos
           </div>
           <button data-action="clipboard#copy" class="absolute top-3 right-3 h-7 px-2.5 rounded-md bg-white/10 text-white/70 text-[11px] font-semibold border-0 cursor-pointer hover:bg-white/20 transition-colors">Copy</button>
         </div>
-        <p class="text-text-muted text-[12px] mt-3 m-0">It will ask for your project name and API token (paste from step 1). No secrets are in the URL.</p>
+        <div class="relative mt-2" data-controller="clipboard" data-clipboard-text-value="staffos init">
+          <div class="terminal p-4 rounded-lg text-[13px] overflow-x-auto">
+            <span class="terminal-dim">$</span> cd your-repo &amp;&amp; staffos init
+          </div>
+          <button data-action="clipboard#copy" class="absolute top-3 right-3 h-7 px-2.5 rounded-md bg-white/10 text-white/70 text-[11px] font-semibold border-0 cursor-pointer hover:bg-white/20 transition-colors">Copy</button>
+        </div>
+        <div class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-text-muted" data-controller="clipboard" data-clipboard-text-value="<%= request.base_url %>">
+          <span>When <code>init</code> asks for the endpoint, use</span>
+          <code class="text-primary"><%= request.base_url %></code>
+          <button data-action="clipboard#copy" class="h-6 px-2 rounded-md btn-secondary text-[11px] font-semibold cursor-pointer">Copy</button>
+        </div>
+        <p class="text-text-muted text-[12px] mt-2 m-0">Then paste the token from step 1. <code>init</code> saves it in <code>.staffos.yml</code> and installs the Claude Code hooks in <code>.claude/settings.local.json</code>. Both stay out of git. Restart Claude Code in the repo afterwards.</p>
       </div>
     </div>
 
@@ -82,7 +93,7 @@
           <div class="flex justify-between"><span class="text-text-muted">Project</span><span class="font-semibold"><%= @project.name %></span></div>
           <div class="flex justify-between"><span class="text-text-muted">Endpoint</span><code class="text-primary text-[12px]"><%= request.base_url %></code></div>
           <div class="flex justify-between"><span class="text-text-muted">Token</span><code class="text-text-soft text-[12px]"><%= @token.masked_token %></code></div>
-          <div class="flex justify-between"><span class="text-text-muted">Hooks</span><span class="font-semibold">SessionStart, Prompt, PostToolUse, Stop</span></div>
+          <div class="flex justify-between"><span class="text-text-muted">Hooks</span><span class="font-semibold">SessionStart, Prompt, Pre/PostToolUse, Stop</span></div>
           <div class="flex justify-between"><span class="text-text-muted">Privacy</span><span class="text-success font-semibold">Source code stays local</span></div>
         </div>
       </div>
@@ -91,13 +102,11 @@
     <%# Manual alternative %>
     <details class="card">
       <summary class="p-4 cursor-pointer text-[13px] font-semibold text-text-soft hover:text-text-primary">
-        Manual setup (if you prefer step-by-step)
+        Manual setup (without <code>staffos init</code>)
       </summary>
       <div class="px-6 pb-6 text-[12px] text-text-soft space-y-3">
-        <p class="m-0"><strong>1.</strong> Install the CLI: add <code>cli/</code> to your PATH</p>
-        <p class="m-0"><strong>2.</strong> Run <code>staffos login</code> — endpoint: <code><%= request.base_url %></code></p>
-        <p class="m-0"><strong>3.</strong> Run <code>staffos init</code> in your project directory</p>
-        <p class="m-0"><strong>4.</strong> Or manually add hooks — see the <a href="<%= hook_config_project_path(@project) %>" class="text-primary no-underline font-semibold">hook config page</a></p>
+        <p class="m-0">Install the CLI as above. The hooks need it to add the git branch to each event.</p>
+        <p class="m-0">Then copy the hook config from the <a href="<%= hook_config_project_path(@project) %>" class="text-primary no-underline font-semibold">hook config page</a> into <code>.claude/settings.local.json</code>.</p>
       </div>
     </details>
   <% else %>

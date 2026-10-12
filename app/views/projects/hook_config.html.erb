@@ -1,24 +1,32 @@
 <div class="flex justify-between items-start mb-6">
   <div>
     <h1 class="heading-1 mb-2">Claude Code Hook Config</h1>
-    <p class="text-text-muted text-sm">Add this configuration to your Claude Code settings to connect StaffOS.</p>
+    <p class="text-text-muted text-sm">How Claude Code sends events to StaffOS for this project.</p>
   </div>
   <%= link_to "Back to Project", project_path(@project), class: "btn-secondary btn-lg" %>
 </div>
 
-<%= card(title: "1. Generate an API Token") do %>
-  <% if @token %>
-    <p class="text-text-soft text-sm mb-2">You have a token: <code class="text-primary"><%= @token.masked_token %></code></p>
-  <% else %>
-    <p class="text-text-soft text-sm mb-3">Generate an API token first from the project page.</p>
-    <%= button_to "Generate Token", project_api_tokens_path(@project), params: { name: "CLI Token" }, class: "h-9 px-3 rounded-sm btn-primary text-sm font-bold cursor-pointer border-0" %>
-  <% end %>
+<%= card(title: "1. Install the CLI and connect the repo") do %>
+  <p class="text-text-soft text-sm mb-3">The hooks call the <code>staffos</code> CLI, so install it first. <code>staffos init</code> then asks for the endpoint and this project's API token and installs the hooks for you.</p>
+  <div class="terminal p-4 rounded-lg text-[13px] overflow-x-auto">
+    <div><span class="terminal-dim">$</span> brew install rajgurung/tap/staffos</div>
+    <div><span class="terminal-dim">$</span> cd your-repo &amp;&amp; staffos init</div>
+  </div>
+  <div class="mt-3 text-sm">
+    <% if @token %>
+      <p class="text-text-soft m-0">Endpoint: <code class="text-primary"><%= request.base_url %></code>. API token: <code class="text-primary"><%= @token.masked_token %></code>. Copy the full token from the <%= link_to "Connect page", connect_path, class: "text-primary no-underline font-semibold" %>.</p>
+    <% else %>
+      <p class="text-text-soft mb-3">This project has no API token yet.</p>
+      <%= button_to "Generate Token", project_api_tokens_path(@project), params: { name: "CLI Token" }, class: "h-9 px-3 rounded-sm btn-primary text-sm font-bold cursor-pointer border-0" %>
+    <% end %>
+  </div>
 <% end %>
 
-<%= card(title: "2. Add to .claude/settings.json", classes: "mt-4") do %>
-  <p class="text-text-soft text-sm mb-3">Add this hooks configuration to your Claude Code settings file:</p>
-  <div class="border border-panel-border rounded-[14px] bg-bg p-4 font-mono text-xs text-text-soft overflow-x-auto" data-controller="clipboard" data-clipboard-text-value='<%= hook_config_json(@project) %>'>
-    <pre><%= hook_config_json(@project) %></pre>
+<%= card(title: "2. Or add the hooks by hand", classes: "mt-4") do %>
+  <p class="text-text-soft text-sm mb-3">This is the config <code>staffos init</code> writes. Put it in <code>.claude/settings.local.json</code>, which is your own copy and stays out of git. Don't use <code>.claude/settings.json</code>: it's shared through git, and anyone without the CLI would get a "command not found" error on every hook. You still need the CLI installed, and a <code>.staffos.yml</code> with this project's token.</p>
+  <div class="relative border border-panel-border rounded-[14px] bg-bg p-4 font-mono text-xs text-text-soft overflow-x-auto" data-controller="clipboard" data-clipboard-text-value="<%= hook_config_json %>">
+    <pre class="m-0"><%= hook_config_json %></pre>
+    <button data-action="clipboard#copy" class="absolute top-3 right-3 h-7 px-2.5 rounded-md btn-secondary text-[11px] font-semibold cursor-pointer">Copy</button>
   </div>
 <% end %>
 

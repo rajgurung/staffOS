@@ -10,7 +10,7 @@ require "fileutils"
 class StaffOSCLI
   CONFIG_FILE = ".staffos.yml"
   CREDENTIALS_FILE = File.expand_path("~/.staffos/credentials.yml")
-  VERSION = "0.4.0"
+  VERSION = "0.5.0"
 
   def initialize(args)
     @args = args
@@ -27,7 +27,7 @@ class StaffOSCLI
     when "hook"       then generate_hook
     when "capture"    then capture(@args[1])
     when "version"    then puts "staffos #{VERSION}"
-    when "help", nil  then help
+    when "help", "-h", "--help", nil then help
     else
       puts "Unknown command: #{@command}"
       help
@@ -82,13 +82,21 @@ class StaffOSCLI
       else
         puts "  Token:    global login (add api_token to #{CONFIG_FILE} to pin this repo to its project)"
       end
+      puts "\nRun 'staffos hook' to reinstall the Claude Code hooks."
       return
     end
 
+    # A global login is optional: the project token is what routes events, so
+    # init only needs the endpoint, which it asks for when there's no login.
     creds = load_credentials
-    unless creds
-      puts "Not logged in. Run 'staffos login' first."
-      exit 1
+    endpoint = creds && creds["endpoint"]
+    unless endpoint
+      print "StaffOS endpoint (shown on the Connect page): "
+      endpoint = $stdin.gets.to_s.strip.sub(%r{/+\z}, "")
+      if endpoint.empty?
+        puts "Error: endpoint is required."
+        exit 1
+      end
     end
 
     project_name = detect_project_name
@@ -102,13 +110,17 @@ class StaffOSCLI
     # captured events under the token's project. Storing the token per-repo
     # keeps each repo routing to its own project even after a global re-login.
     puts "\nEach StaffOS project has its own API token (find it on the project's Connect page)."
-    print "API token for this project [reuse global login token]: "
-    project_token = $stdin.gets.strip
+    print creds ? "API token for this project [reuse global login token]: " : "API token for this project: "
+    project_token = $stdin.gets.to_s.strip
+    if project_token.empty? && !creds
+      puts "Error: API token is required."
+      exit 1
+    end
 
     config = {
       "project_name" => project_name,
       "repo_name" => repo_name,
-      "api_endpoint" => creds["endpoint"],
+      "api_endpoint" => endpoint,
       "privacy" => {
         "upload_source" => false,
         "upload_diffs" => "metadata_only",
@@ -121,7 +133,7 @@ class StaffOSCLI
     File.chmod(0600, CONFIG_FILE) if config["api_token"]
     puts "Created #{CONFIG_FILE}"
 
-    ignore_local_config
+    ignore_in_git(CONFIG_FILE)
 
     generate_hook
     puts "\nProject initialized. Start Claude Code and events will be captured."
@@ -129,7 +141,7 @@ class StaffOSCLI
 
   def status
     config = load_config
-    creds = load_credentials
+    creds = capture_credentials
 
     puts "StaffOS Status"
     puts "─" * 40
@@ -137,18 +149,15 @@ class StaffOSCLI
     puts "Project:     #{config ? config['project_name'] : 'Not initialized'}"
     puts "Repo:        #{config ? config['repo_name'] : 'N/A'}"
     puts "Branch:      #{current_branch}"
-    puts "Endpoint:    #{creds ? creds['endpoint'] : 'Not logged in'}"
+    puts "Endpoint:    #{creds ? creds['endpoint'] : 'Not set'}"
     puts "Config:      #{File.exist?(CONFIG_FILE) ? CONFIG_FILE : 'Not found'}"
     puts "Credentials: #{File.exist?(CREDENTIALS_FILE) ? 'Saved' : 'Not found'}"
     puts "Token:       #{config && config['api_token'] ? "project-specific (#{CONFIG_FILE})" : 'global login'}"
 
-    hooks_file = ".claude/settings.json"
-    if File.exist?(hooks_file)
-      settings = JSON.parse(File.read(hooks_file)) rescue {}
-      hook_count = (settings["hooks"] || {}).keys.length
-      puts "Hooks:       #{hook_count > 0 ? "#{hook_count} events configured" : 'Not configured'}"
-    else
-      puts "Hooks:       Not configured"
+    hook_count = staffos_hook_events(HOOKS_FILE).length
+    puts "Hooks:       #{hook_count > 0 ? "#{hook_count} events configured (#{HOOKS_FILE})" : 'Not configured'}"
+    if staffos_hook_events(SHARED_HOOKS_FILE).any?
+      puts "             Old hooks found in #{SHARED_HOOKS_FILE}. Run 'staffos hook' to move them."
     end
 
     if creds
@@ -188,18 +197,8 @@ class StaffOSCLI
       removed << "credentials (#{CREDENTIALS_FILE})"
     end
 
-    # Strip StaffOS hooks from .claude/settings.json, leaving other settings intact.
-    settings_file = ".claude/settings.json"
-    if File.exist?(settings_file)
-      settings = JSON.parse(File.read(settings_file)) rescue {}
-      if settings.delete("hooks")
-        if settings.empty?
-          File.delete(settings_file)
-        else
-          File.write(settings_file, JSON.pretty_generate(settings))
-        end
-        removed << "Claude Code hooks (#{settings_file})"
-      end
+    [HOOKS_FILE, SHARED_HOOKS_FILE].each do |file|
+      removed << "Claude Code hooks (#{file})" if strip_staffos_hooks(file)
     end
 
     if removed.empty?
@@ -220,6 +219,12 @@ class StaffOSCLI
     "Stop"             => "stop"
   }.freeze
 
+  # Hooks live in Claude Code's per-user settings file, not the shared
+  # .claude/settings.json: they call `staffos capture`, so committing them
+  # would break Claude Code for anyone who clones the repo without the CLI.
+  HOOKS_FILE = ".claude/settings.local.json"
+  SHARED_HOOKS_FILE = ".claude/settings.json"
+
   def generate_hook
     # Command hooks (not HTTP): Claude Code pipes the event JSON to
     # `staffos capture`, which enriches it with the local git branch — the
@@ -235,13 +240,19 @@ class StaffOSCLI
     puts "Claude Code pipes each event to `staffos capture`, which adds the git branch."
     puts JSON.pretty_generate({ "hooks" => hooks })
 
-    claude_dir = ".claude"
-    settings_file = "#{claude_dir}/settings.json"
-    FileUtils.mkdir_p(claude_dir)
-    existing = File.exist?(settings_file) ? (JSON.parse(File.read(settings_file)) rescue {}) : {}
-    existing["hooks"] = hooks
-    File.write(settings_file, JSON.pretty_generate(existing))
-    puts "\nHook config written to #{settings_file}"
+    moved = strip_staffos_hooks(SHARED_HOOKS_FILE)
+    strip_staffos_hooks(HOOKS_FILE)
+
+    # Merge per event so the user's own hooks in the same file survive.
+    settings = read_settings(HOOKS_FILE)
+    settings["hooks"] = {} unless settings["hooks"].is_a?(Hash)
+    hooks.each { |event, entries| settings["hooks"][event] = Array(settings["hooks"][event]) + entries }
+    FileUtils.mkdir_p(File.dirname(HOOKS_FILE))
+    File.write(HOOKS_FILE, JSON.pretty_generate(settings) + "\n")
+    puts "\nHook config written to #{HOOKS_FILE}"
+    puts "Moved StaffOS hooks out of #{SHARED_HOOKS_FILE}." if moved
+
+    ignore_in_git(HOOKS_FILE)
   end
 
   # Called by Claude Code's command hooks. Reads the event JSON on stdin, adds
@@ -291,8 +302,8 @@ class StaffOSCLI
       Usage: staffos <command>
 
       Commands:
-        login      Connect to a StaffOS instance
-        init       Initialize project in current directory
+        init       Connect this repo to a StaffOS project
+        login      Save a default endpoint and token (optional)
         status     Show connection and project status
         passport   Show latest passport for current branch
         disconnect Remove stored credentials and Claude Code hooks
@@ -301,13 +312,14 @@ class StaffOSCLI
         help       Show this help
 
       Getting started:
-        1. staffos login      (enter your API endpoint and token)
-        2. staffos init       (creates .staffos.yml and installs hooks)
+        1. Copy the project's API token from the StaffOS Connect page
+        2. staffos init       (asks for the endpoint and token, installs hooks)
         3. Use Claude Code normally - events are captured via hooks
         4. Visit StaffOS dashboard to see workstreams and passports
 
       How it works:
         init installs Claude Code command hooks that run `staffos capture`.
+        They go in .claude/settings.local.json, which stays out of git.
         Each event (session start, prompt, tool use, stop) is tagged with
         the current git branch and sent to StaffOS.
         Passports belong to git branches, not sessions. Each branch has
@@ -325,18 +337,64 @@ class StaffOSCLI
     File.chmod(0600, CREDENTIALS_FILE)
   end
 
-  # Keep the local project config out of version control (it's per-user).
-  def ignore_local_config
-    entry = File.basename(CONFIG_FILE)
+  # Keep per-user files (project token, hooks) out of version control.
+  def ignore_in_git(entry)
     existing = File.exist?(".gitignore") ? File.read(".gitignore") : ""
     return if existing.split("\n").map(&:strip).include?(entry)
 
     File.open(".gitignore", "a") do |f|
       f.puts "" unless existing.empty? || existing.end_with?("\n")
-      f.puts "# StaffOS local config"
+      f.puts "# StaffOS local config" unless existing.include?("# StaffOS local config")
       f.puts entry
     end
     puts "Added #{entry} to .gitignore"
+  end
+
+  # Stops rather than treating a broken file as empty, which would make the
+  # next write silently replace the user's settings.
+  def read_settings(file)
+    return {} unless File.exist?(file)
+    settings = JSON.parse(File.read(file))
+    raise JSON::ParserError, "top level is not an object" unless settings.is_a?(Hash)
+    settings
+  rescue JSON::ParserError => e
+    puts "Error: #{file} isn't valid JSON (#{e.message.lines.first.strip})."
+    puts "Fix or remove it, then run this command again. Nothing was changed."
+    exit 1
+  end
+
+  # Matches the current command hooks and the HTTP hooks older setups
+  # (the web Connect script) installed, so both get cleaned up.
+  def staffos_hook_entry?(entry)
+    Array(entry.is_a?(Hash) && entry["hooks"]).any? do |h|
+      h["command"].to_s.start_with?("staffos capture") || h["url"].to_s.include?("/api/v1/hooks/")
+    end
+  end
+
+  def staffos_hook_events(file)
+    hooks = read_settings(file)["hooks"]
+    return [] unless hooks.is_a?(Hash)
+    hooks.select { |_, entries| Array(entries).any? { |e| staffos_hook_entry?(e) } }.keys
+  end
+
+  # Removes only StaffOS's hook entries, keeping the user's other hooks and
+  # settings. Deletes the file if nothing else is left. True if it changed.
+  def strip_staffos_hooks(file)
+    settings = read_settings(file)
+    hooks = settings["hooks"]
+    return false unless hooks.is_a?(Hash)
+
+    kept = hooks.transform_values { |entries| Array(entries).reject { |e| staffos_hook_entry?(e) } }
+    return false if kept == hooks
+
+    kept.reject! { |_, entries| entries.empty? }
+    kept.empty? ? settings.delete("hooks") : settings["hooks"] = kept
+    if settings.empty?
+      File.delete(file)
+    else
+      File.write(file, JSON.pretty_generate(settings) + "\n")
+    end
+    true
   end
 
   def load_credentials

@@ -38,6 +38,15 @@ class ProjectScopingTest < ActionDispatch::IntegrationTest
     assert_equal @owner, Project.find_by(name: "Fresh").user
   end
 
+  test "settings counts only the current user's workstreams" do
+    make_workstream(project: @owner_project, branch_name: "feature/mine")
+    3.times { |i| make_workstream(project: @other_project, branch_name: "feature/theirs-#{i}") }
+    sign_in @owner
+    get settings_path
+    assert_response :success
+    assert_select "div.flex.justify-between", text: /Workstreams\s*1\z/
+  end
+
   test "cannot view another user's workstream" do
     ws = make_workstream(project: @other_project, branch_name: "feature/secret")
     sign_in @owner

@@ -110,15 +110,15 @@ No Homebrew? The CLI is a single, dependency-free Ruby script — grab it from t
 ### Connect a repo with the CLI
 
 ```bash
-staffos login        # enter your endpoint + project token
-staffos init         # writes .staffos.yml and installs Claude Code hooks
+staffos init         # asks for the endpoint + project token, installs Claude Code hooks
 # ...use Claude Code normally — events are captured automatically...
 staffos passport     # see the latest passport for your branch
-staffos disconnect   # remove credentials and hooks
+staffos disconnect   # remove credentials and StaffOS's hooks (your own hooks stay)
 ```
 
 `init` installs command hooks (`SessionStart`, `UserPromptSubmit`, pre/post tool
-use, `Stop`) into `.claude/settings.json`. Each hook runs `staffos capture`,
+use, `Stop`) into `.claude/settings.local.json`, which stays out of git, so
+cloning the repo doesn't hand the hooks to people without the CLI. Each hook runs `staffos capture`,
 which adds the current git branch and sends the event to StaffOS. Events are
 filed under that branch's Workstream. Each `Stop` (the end of a Claude reply)
 rebuilds the branch's Run Passport. There is one passport per branch, not per
