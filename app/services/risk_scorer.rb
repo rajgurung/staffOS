@@ -40,6 +40,9 @@ class RiskScorer
     needle = pattern.to_s.strip.downcase
     return false if needle.empty?
     return true if path.downcase.match?(/(?:\A|[^a-z0-9])#{Regexp.escape(needle)}/)
+    # camelCase check for single-word patterns ("session" in PlayerSession.cpp).
+    # capitalize lowercases the rest, so multi-word camel patterns rely on the
+    # separator check above.
     path.match?(/(?<=[a-z0-9])#{Regexp.escape(needle.capitalize)}/)
   end
 
